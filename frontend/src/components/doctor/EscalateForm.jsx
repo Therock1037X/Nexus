@@ -8,18 +8,37 @@ import StatusBadge from '../common/StatusBadge.jsx';
 
 export default function EscalateForm({ preselectedResource = null, onSuccess = null }) {
   const { currentUser } = useAuth();
-  const { resources, patients, playAlertTone } = useHospital();
+  const { resources = [], patients = [], playAlertTone } = useHospital();
 
-  const occupiedOrReserved = resources.filter(r => r.status === 'occupied' || r.status === 'reserved');
+  const occupiedOrReserved = (resources || []).filter(r => r.status === 'occupied' || r.status === 'reserved');
+  const targetResources = occupiedOrReserved.length > 0
+    ? occupiedOrReserved
+    : (resources || []).filter(r => r.type === 'bed' || r.type === 'ot' || r.type === 'equipment');
 
-  const [resourceId, setResourceId] = useState(preselectedResource?.id || occupiedOrReserved[0]?.id || '');
-  const [patientId, setPatientId] = useState(patients[1]?.patientId || '');
+  const [resourceId, setResourceId] = useState(preselectedResource?.id || targetResources[0]?.id || '');
+  const [patientId, setPatientId] = useState(patients[0]?.patientId || patients[0]?.id || '');
   const [escalationLevel, setEscalationLevel] = useState('critical');
   const [reason, setReason] = useState('Acute cardiovascular arrest, patient in VTach, urgent resuscitation OT/ICU bed required stat.');
   const [aiUrgency, setAiUrgency] = useState('Critical');
   const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  // Sync selected resource if empty or preselected changes
+  useEffect(() => {
+    if (preselectedResource?.id) {
+      setResourceId(preselectedResource.id);
+    } else if (!resourceId && targetResources.length > 0) {
+      setResourceId(targetResources[0].id);
+    }
+  }, [preselectedResource?.id, targetResources.length]);
+
+  // Sync selected patient if empty
+  useEffect(() => {
+    if (!patientId && patients.length > 0) {
+      setPatientId(patients[0].patientId || patients[0].id || '');
+    }
+  }, [patients.length]);
 
   // 800ms Debounced AI Urgency Suggestion (Never auto-selects priority)
   useEffect(() => {
@@ -41,6 +60,9 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
     return () => clearTimeout(timer);
   }, [reason]);
 
+  const selectedRes = (resources || []).find(r => r.id === resourceId);
+  const selectedPatient = (patients || []).find(p => (p.patientId && p.patientId === patientId) || (p.id && p.id === patientId));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!resourceId) return;
@@ -59,10 +81,10 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         allocationType: 'occupied',
         priority: escalationLevel,
         reason: `[EMERGENCY OVERRIDE] ${reason}`,
-        aiSuggestedPriority: aiUrgency?.suggestedPriority || 'critical'
+        aiSuggestedPriority: (typeof aiUrgency === 'string' ? aiUrgency.toLowerCase() : 'critical')
       });
 
-      playAlertTone('success');
+      if (playAlertTone) playAlertTone('success');
       setFeedback({
         type: 'success',
         message: result.preemptionNotice
@@ -72,10 +94,10 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
 
       if (onSuccess) onSuccess(result);
     } catch (err) {
-      playAlertTone('conflict');
+      if (playAlertTone) playAlertTone('conflict');
       setFeedback({
         type: 'error',
-        message: `Override not completed: ${err.message}`
+        message: `Override not completed: ${err.message || err}`
       });
     } finally {
       setSubmitting(false);
@@ -102,15 +124,24 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
           onChange={(e) => setResourceId(e.target.value)}
           className="clean-input w-full font-mono font-medium"
         >
-          {occupiedOrReserved.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.id} ({r.name || r.type}) • Status: {r.status.toUpperCase()} • Held By: {r.currentAllocation?.patientName || 'Reserved'} ({r.currentAllocation?.priority || 'normal'})
-            </option>
-          ))}
+          {targetResources.length === 0 ? (
+            <option value="">No resources available</option>
+          ) : (
+            targetResources.map((r) => {
+              const statusStr = String(r.status || 'occupied').toUpperCase();
+              const holderName = r.currentAllocation?.patientName || (r.status === 'reserved' ? 'Reserved' : 'Occupied');
+              const currentPrio = r.currentAllocation?.priority || 'normal';
+              return (
+                <option key={r.id} value={r.id}>
+                  {r.id} ({r.name || r.type}) • Status: {statusStr} • Held By: {holderName} ({currentPrio})
+                </option>
+              );
+            })
+          )}
         </select>
         {selectedRes?.currentAllocation && (
           <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between font-medium">
-            <span>Currently Assigned To: <strong className="text-slate-900 font-bold">{selectedRes.currentAllocation.patientName}</strong></span>
+            <span>Currently Assigned To: <strong className="text-slate-900 font-bold">{selectedRes.currentAllocation.patientName || 'Patient'}</strong></span>
             <span>Current Urgency: <StatusBadge status={selectedRes.currentAllocation.priority || 'normal'} size="xs" /></span>
           </div>
         )}
@@ -125,11 +156,20 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
             onChange={(e) => setPatientId(e.target.value)}
             className="clean-input w-full font-medium"
           >
-            {patients.map((p) => (
-              <option key={p.patientId} value={p.patientId}>
-                {p.name} ({p.patientId}) • {p.diagnosis}
-              </option>
-            ))}
+            {patients.length === 0 ? (
+              <option value="pat-emergency">Emergency Patient (New Admission)</option>
+            ) : (
+              patients.map((p) => {
+                const pid = p.patientId || p.id || 'pat-id';
+                const pname = p.name || 'Patient';
+                const pdiag = p.diagnosis || p.reason || 'Observation';
+                return (
+                  <option key={pid} value={pid}>
+                    {pname} ({pid}) • {pdiag}
+                  </option>
+                );
+              })
+            )}
           </select>
         </div>
 
@@ -139,7 +179,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
             {aiUrgency && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-purple-600" />
-                <span>AI suggestion: {aiUrgency}</span>
+                <span>AI suggestion: {typeof aiUrgency === 'string' ? aiUrgency : 'Critical'}</span>
               </span>
             )}
           </div>
