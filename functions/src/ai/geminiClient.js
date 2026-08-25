@@ -1,5 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import admin from 'firebase-admin';
+import { defineSecret } from 'firebase-functions/params';
+
+// Define Firebase Cloud Functions Secret
+export const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
 // Initialize Admin SDK if needed
 if (!admin.apps.length) {
@@ -10,10 +14,15 @@ const db = admin.firestore();
 
 /**
  * Shared Gemini Client Wrapper for Firebase Cloud Functions
- * Reads API key from secrets/environment and manages Flash model calls with logging
+ * Reads API key from Firebase Secret / environment and manages Flash model calls with logging
  */
 export async function callGemini(systemPrompt, userInput, modelName = 'gemini-1.5-flash', hospitalId = 'default-hospital') {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+  let apiKey = '';
+  try {
+    apiKey = geminiApiKey.value() || process.env.GEMINI_API_KEY || '';
+  } catch (err) {
+    apiKey = process.env.GEMINI_API_KEY || '';
+  }
 
   if (!apiKey) {
     console.warn('[Gemini Client] No GEMINI_API_KEY configured. Returning fallback.');

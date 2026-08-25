@@ -33,6 +33,7 @@ import { suggestUrgency } from './ai/suggestUrgency.js';
 import { parseRequest } from './ai/parseRequest.js';
 import { predictAvailability } from './ai/predictAvailability.js';
 import { getSuggestedAction } from './ai/suggestedAction.js';
+import { geminiApiKey } from './ai/geminiClient.js';
 
 // ==========================================
 // CALLABLE FUNCTIONS
@@ -74,28 +75,28 @@ export const compensatePrescriptionCall = onCall(async (request) => {
   return await compensatePrescriptionSaga(db, hospitalId, params);
 });
 
-// AI Callables
-export const explainActivityCall = onCall(async (request) => {
+// AI Callables (with Cloud Functions GEMINI_API_KEY Secret Binding)
+export const explainActivityCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { events, hospitalId = 'default-hospital' } = request.data;
   return await explainActivity(events, hospitalId);
 });
 
-export const suggestUrgencyCall = onCall(async (request) => {
+export const suggestUrgencyCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { clinicalReason, hospitalId = 'default-hospital' } = request.data;
   return await suggestUrgency(clinicalReason, hospitalId);
 });
 
-export const parseRequestCall = onCall(async (request) => {
+export const parseRequestCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { naturalText, hospitalId = 'default-hospital' } = request.data;
   return await parseRequest(naturalText, hospitalId);
 });
 
-export const predictAvailabilityCall = onCall(async (request) => {
+export const predictAvailabilityCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { resources, events, hospitalId = 'default-hospital' } = request.data;
   return await predictAvailability(resources, events, hospitalId);
 });
 
-export const getSuggestedActionCall = onCall(async (request) => {
+export const getSuggestedActionCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
   const { doctorId, doctorName, patients, sagas, events, hospitalId = 'default-hospital' } = request.data;
   return await getSuggestedAction({ doctorId, doctorName, patients, sagas, events, hospitalId });
 });
