@@ -7,11 +7,9 @@ import {
   Pill,
   Shield,
   ArrowRight,
-  Sparkles,
   Lock,
   Mail,
-  User,
-  CheckCircle2
+  User
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -59,68 +57,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background Neon Gradients */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center z-10">
-        {/* Left: Brand & Hackathon 1-Click Fast Login Personas */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-xl shadow-cyan-950/50">
-              <Activity className="w-7 h-7 animate-pulse" />
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 bg-[#f8fafc] text-slate-900 relative">
+      <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
+        
+        {/* Left: Brand & Hackathon 1-Click Fast Login Personas (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-900/20">
+              <Activity className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
                 NEXUS
               </h1>
-              <p className="text-xs text-cyan-400 font-mono">Real-Time Clinical Resource Transaction System</p>
+              <p className="text-xs text-emerald-800 font-bold uppercase tracking-wider">
+                Clinical Resource Coordination & Concurrency System
+              </p>
             </div>
           </div>
 
-          <p className="text-sm text-slate-300 leading-relaxed">
-            Live hospital coordination & transaction engine with <strong>Optimistic Concurrency Control</strong>, deterministic preemption tiebreakers, 3-step clinical <strong>Sagas</strong> with automated rollback compensation, and <strong>AI-assisted medical intelligence</strong>.
+          <p className="text-sm text-slate-600 leading-relaxed font-medium">
+            Real-time hospital operations with <strong className="text-slate-900">Optimistic Concurrency Control (OCC)</strong>, deterministic preemption tiebreakers, 3-step distributed <strong className="text-slate-900">Prescription Sagas</strong> with automated rollback compensation, and <strong className="text-slate-900">Gemini AI medical intelligence</strong>.
           </p>
 
           {/* 1-Click Quick Personas (Hackathon Fast-Access) */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-400 uppercase font-semibold">1-Click Fast Demo Login</span>
-              <span className="text-cyan-400">INSTANT ACCESS</span>
+          <div className="clean-card p-5 space-y-3.5 bg-white">
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="text-slate-500 uppercase tracking-wider font-bold text-[11px]">1-Click Demo Personas</span>
+              <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">INSTANT ACCESS</span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {personas.map((persona) => {
                 const getIcon = () => {
-                  if (persona.role === 'doctor') return <Stethoscope className="w-4 h-4 text-cyan-400" />;
-                  if (persona.role === 'nurse') return <Heart className="w-4 h-4 text-emerald-400" />;
-                  if (persona.role === 'pharmacy') return <Pill className="w-4 h-4 text-purple-400" />;
-                  return <Shield className="w-4 h-4 text-amber-400" />;
+                  if (persona.role === 'doctor') return <Stethoscope className="w-4 h-4 text-emerald-700" />;
+                  if (persona.role === 'nurse') return <Heart className="w-4 h-4 text-blue-700" />;
+                  if (persona.role === 'pharmacy') return <Pill className="w-4 h-4 text-purple-700" />;
+                  return <Shield className="w-4 h-4 text-amber-700" />;
                 };
 
                 return (
                   <button
                     key={persona.id}
                     onClick={() => handlePersonaClick(persona.id, persona.role)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/90 hover:border-cyan-500/50 hover:bg-slate-850 transition-all text-left text-xs group"
+                    className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all text-left text-xs group bg-slate-50/60"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-slate-800 text-slate-200 font-bold flex items-center justify-center text-[10px]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center text-xs">
                         {persona.avatar}
                       </div>
                       <div>
-                        <div className="font-semibold text-slate-200 group-hover:text-cyan-300 transition-colors">
+                        <div className="font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">
                           {persona.name}
                         </div>
-                        <div className="text-[11px] text-slate-400 capitalize">
+                        <div className="text-[11px] text-slate-500 capitalize font-medium">
                           {persona.role} • {persona.specialty || persona.department || persona.wardAssigned || persona.title}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-slate-500 group-hover:text-cyan-400">
+                    <div className="flex items-center gap-1.5 text-slate-400 group-hover:text-emerald-700">
                       {getIcon()}
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-4 h-4" />
                     </div>
                   </button>
                 );
@@ -129,22 +126,22 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right: Standard Firebase Auth Login / Signup Card */}
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl">
+        {/* Right: Standard Firebase Auth Login / Signup Card (5 cols) */}
+        <div className="lg:col-span-5 clean-card p-6 sm:p-8 bg-white">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-slate-100">
-              {isSignup ? 'Create Account' : 'Sign In'}
+            <h2 className="text-xl font-extrabold text-slate-900">
+              {isSignup ? 'Create Account' : 'Staff Sign In'}
             </h2>
             <button
               onClick={() => setIsSignup(!isSignup)}
-              className="text-xs text-cyan-400 hover:underline font-medium"
+              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold"
             >
-              {isSignup ? 'Already have account? Sign in' : 'New staff? Sign up'}
+              {isSignup ? 'Already registered? Sign in' : 'New staff? Sign up'}
             </button>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs">
+            <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
               {error}
             </div>
           )}
@@ -153,26 +150,26 @@ export default function LoginPage() {
             {isSignup && (
               <>
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Full Name & Title</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Full Name & Title</label>
                   <div className="relative">
                     <input
                       type="text"
                       placeholder="e.g. Dr. Priya Nair"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="glass-input w-full pl-9"
+                      className="clean-input w-full pl-9"
                       required
                     />
-                    <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Assigned Clinical Role</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Assigned Clinical Role</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="glass-input w-full font-mono font-medium capitalize"
+                    className="clean-input w-full font-medium capitalize"
                   >
                     <option value="doctor">Doctor — Resources & Prescriptions</option>
                     <option value="nurse">Nurse — Bedside Tasks & Vitals</option>
@@ -184,39 +181,39 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Hospital Email</label>
+              <label className="block text-slate-700 font-semibold mb-1">Hospital Email</label>
               <div className="relative">
                 <input
                   type="email"
                   placeholder="name@nexus.hospital"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="glass-input w-full pl-9"
+                  className="clean-input w-full pl-9"
                   required
                 />
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Security Password</label>
+              <label className="block text-slate-700 font-semibold mb-1">Security Password</label>
               <div className="relative">
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="glass-input w-full pl-9"
+                  className="clean-input w-full pl-9"
                   required
                 />
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-2.5 text-xs font-bold mt-2"
+              className="btn-primary w-full py-3 text-xs font-bold mt-2 shadow-sm"
             >
               {loading ? 'Authenticating...' : isSignup ? 'Complete Registration' : 'Sign In to Workspace'}
             </button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { flagIssueTransaction } from '../../services/resourceService.js';
@@ -48,11 +48,11 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Target Hospital Resource</label>
+        <label className="block text-slate-700 font-semibold mb-1">Target Hospital Resource</label>
         <select
           value={resourceId}
           onChange={(e) => setResourceId(e.target.value)}
-          className="glass-input w-full font-mono"
+          className="clean-input w-full font-mono font-medium"
         >
           {resources.map((r) => (
             <option key={r.id} value={r.id}>
@@ -63,11 +63,11 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
       </div>
 
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Issue Classification</label>
+        <label className="block text-slate-700 font-semibold mb-1">Issue Classification</label>
         <select
           value={issueType}
           onChange={(e) => setIssueType(e.target.value)}
-          className="glass-input w-full font-mono"
+          className="clean-input w-full font-medium"
         >
           <option value="cleaning">Sanitization / Cleaning Protocol Required</option>
           <option value="maintenance">Biomedical Maintenance / Calibration Required</option>
@@ -75,25 +75,25 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
       </div>
 
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Clinical / Engineering Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Clinical / Engineering Notes</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="e.g. Spillage cleaned; deep disinfection required before next admission..."
-          className="glass-input w-full"
+          className="clean-input w-full"
         />
       </div>
 
       {feedback && (
         <div
-          className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${
+          className={`p-3.5 rounded-xl border flex items-center gap-2 text-xs font-semibold ${
             feedback.type === 'success'
-              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-              : 'bg-rose-950/30 border-rose-500/40 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           <span>{feedback.message}</span>
         </div>
       )}
@@ -101,7 +101,7 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
       <button
         type="submit"
         disabled={submitting || !resourceId}
-        className="btn-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-950/30"
+        className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>

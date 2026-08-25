@@ -7,8 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  ShieldCheck,
-  User
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
@@ -126,12 +125,12 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+    <form onSubmit={handleSubmit} className="space-y-5 text-xs">
       {/* 1. Resource Type & Subtype Matrix */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Resource Category</label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <label className="block text-slate-700 font-semibold mb-1.5">Resource Category</label>
+          <div className="grid grid-cols-3 gap-2">
             {[
               { type: 'bed', label: 'Beds', icon: Bed },
               { type: 'ot', label: 'OTs', icon: Activity },
@@ -148,13 +147,13 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
                     else if (cat.type === 'ot') setSubType('cardiac');
                     else setSubType('ventilator');
                   }}
-                  className={`p-2 rounded-xl flex items-center justify-center gap-1.5 font-medium border transition-all ${
+                  className={`p-2.5 rounded-xl flex items-center justify-center gap-1.5 font-bold border transition-all ${
                     resourceType === cat.type
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-emerald-700 text-white border-emerald-700 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-4 h-4" />
                   <span>{cat.label}</span>
                 </button>
               );
@@ -163,11 +162,11 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
         </div>
 
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Sub-Classification</label>
+          <label className="block text-slate-700 font-semibold mb-1.5">Sub-Classification</label>
           <select
             value={subType}
             onChange={(e) => setSubType(e.target.value)}
-            className="glass-input w-full"
+            className="clean-input w-full font-medium"
           >
             {resourceType === 'bed' && (
               <>
@@ -197,16 +196,16 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
 
       {/* 2. Target Resource Selector with Live State Matrix */}
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-slate-300 font-medium">Select Specific Unit ({candidateResources.length} matching)</label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-slate-700 font-semibold">Select Specific Unit ({candidateResources.length} matching)</label>
           {selectedResource && (
-            <span className="font-mono text-[11px] text-slate-400">
+            <span className="font-mono text-[11px] text-slate-500 font-medium">
               Current: <StatusBadge status={selectedResource.status} size="xs" /> (v{selectedResource.version || 1})
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-36 overflow-y-auto p-1.5 rounded-xl bg-slate-950/60 border border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-40 overflow-y-auto p-2 rounded-xl bg-slate-50 border border-slate-200">
           {candidateResources.map((res) => {
             const isSelected = res.id === selectedResourceId;
             return (
@@ -214,14 +213,14 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
                 type="button"
                 key={res.id}
                 onClick={() => setSelectedResourceId(res.id)}
-                className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all ${
+                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
                   isSelected
-                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-200 ring-1 ring-cyan-500/30'
-                    : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:border-slate-700'
+                    ? 'bg-emerald-50 border-emerald-600 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <div className="font-mono font-bold text-xs truncate">{res.id}</div>
-                <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center justify-between mt-1.5">
                   <StatusBadge status={res.status} size="xs" />
                   <span className="text-[10px] text-slate-400 font-mono">v{res.version || 1}</span>
                 </div>
@@ -232,13 +231,13 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       </div>
 
       {/* 3. Patient Assignment & Priority Tier */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Patient</label>
+          <label className="block text-slate-700 font-semibold mb-1">Patient</label>
           <select
             value={patientId}
             onChange={(e) => setPatientId(e.target.value)}
-            className="glass-input w-full"
+            className="clean-input w-full"
           >
             <option value="">-- Select Registered Patient --</option>
             {patients.map((p) => (
@@ -253,24 +252,24 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
               placeholder="Or type new/walk-in patient name..."
               value={customPatientName}
               onChange={(e) => setCustomPatientName(e.target.value)}
-              className="glass-input w-full mt-1.5 text-xs"
+              className="clean-input w-full mt-2 text-xs"
             />
           )}
         </div>
 
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Priority Tier & Preemption Weight</label>
+          <label className="block text-slate-700 font-semibold mb-1">Priority Tier & Preemption Weight</label>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="glass-input w-full font-mono"
+            className="clean-input w-full font-mono font-medium"
           >
             <option value="normal">NORMAL (Tier 1 - Standard)</option>
             <option value="high">HIGH (Tier 2 - Urgent Procedure)</option>
             <option value="urgent">URGENT (Tier 3 - Rapid Deterioration)</option>
             <option value="critical">CRITICAL (Tier 4 - Emergency Preemption)</option>
           </select>
-          <div className="text-[10px] text-slate-400 mt-1">
+          <div className="text-[11px] text-slate-500 mt-1">
             Higher tiers deterministically preempt lower tiers in conflict situations.
           </div>
         </div>
@@ -278,15 +277,15 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
 
       {/* 4. Clinical Reason & AI Urgency Advisor (Feature 2) */}
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-slate-300 font-medium">Clinical Indication / Reason</label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-slate-700 font-semibold">Clinical Indication / Reason</label>
           <button
             type="button"
             onClick={() => handleAiUrgencyCheck()}
             disabled={isAnalyzingAi || !reason}
-            className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+            className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
           >
-            <Sparkles className="w-3 h-3" />
+            <Sparkles className="w-3.5 h-3.5" />
             {isAnalyzingAi ? 'Analyzing AI...' : 'AI Urgency Check'}
           </button>
         </div>
@@ -296,20 +295,20 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
           onChange={(e) => setReason(e.target.value)}
           onBlur={() => handleAiUrgencyCheck()}
           placeholder="e.g. Patient developed acute chest pain, ST elevation on telemetry, requires urgent cardiac ICU monitoring..."
-          className="glass-input w-full text-xs"
+          className="clean-input w-full text-xs"
         />
 
         {/* AI Advisory Urgency Score Display */}
         {aiUrgency && (
-          <div className="mt-2 p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-start gap-2 text-[11px]">
-            <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+          <div className="mt-2.5 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-2.5 text-[11px]">
+            <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-200">AI Suggested Urgency:</span>
+                <span className="font-bold text-slate-900">AI Suggested Urgency:</span>
                 <StatusBadge status={aiUrgency.suggestedPriority} size="xs" />
-                <span className="font-mono text-slate-400">({Math.round(aiUrgency.confidence * 100)}% match)</span>
+                <span className="font-mono text-slate-500 font-medium">({Math.round(aiUrgency.confidence * 100)}% match)</span>
               </div>
-              <p className="text-slate-400 mt-0.5">{aiUrgency.clinicalRationale}</p>
+              <p className="text-slate-600 mt-1">{aiUrgency.clinicalRationale}</p>
             </div>
           </div>
         )}
@@ -318,16 +317,16 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${
+          className={`p-3.5 rounded-xl border flex items-center gap-2.5 text-xs font-semibold ${
             feedback.type === 'success'
-              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-              : 'bg-rose-950/30 border-rose-500/40 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           ) : (
-            <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
@@ -337,7 +336,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       <button
         type="submit"
         disabled={submitting || !selectedResourceId}
-        className="btn-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2"
+        className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>

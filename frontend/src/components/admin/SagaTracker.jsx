@@ -5,9 +5,6 @@ import {
   Clock,
   RotateCcw,
   Pill,
-  User,
-  AlertTriangle,
-  ChevronRight,
   ShieldCheck
 } from 'lucide-react';
 import { useHospital } from '../../context/HospitalContext.jsx';
@@ -23,28 +20,28 @@ export default function SagaTracker() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <GitPullRequest className="w-5 h-5 text-purple-400" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <GitPullRequest className="w-5 h-5 text-purple-700" />
             Multi-Step Clinical Saga Tracker
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 font-medium">
             Monitors multi-step distributed workflows (Doctor Order → Pharmacy Dispense → Nurse Administer) with automated compensation rollbacks.
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 text-xs font-semibold">
           {['all', 'in_progress', 'completed', 'compensated'].map((st) => (
             <button
               key={st}
               onClick={() => setFilter(st)}
-              className={`px-3 py-1 rounded-lg capitalize transition-colors ${
+              className={`px-3 py-1.5 rounded-lg capitalize transition-all ${
                 filter === st
-                  ? 'bg-purple-500/20 text-purple-300 font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-slate-900 shadow-sm font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {st.replace('_', ' ')} ({sagas.filter(s => st === 'all' || s.status === st).length})
@@ -55,12 +52,12 @@ export default function SagaTracker() {
 
       {/* Sagas List */}
       {filtered.length === 0 ? (
-        <div className="glass-panel rounded-2xl p-8 text-center text-slate-400">
-          <GitPullRequest className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-          <p className="text-sm font-medium text-slate-300">No sagas found for filter: {filter}</p>
+        <div className="clean-card p-12 text-center text-slate-500">
+          <GitPullRequest className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+          <p className="text-sm font-bold text-slate-800">No sagas found for filter: {filter}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered.map((saga) => {
             const isCompensated = saga.status === 'compensated';
             const isCompleted = saga.status === 'completed';
@@ -68,84 +65,83 @@ export default function SagaTracker() {
             return (
               <div
                 key={saga.id}
-                className={`glass-card rounded-2xl p-4 border transition-all ${
+                className={`clean-card p-5 border transition-all ${
                   isCompensated
-                    ? 'border-purple-900/50 bg-purple-950/10'
+                    ? 'border-purple-200 bg-purple-50/20'
                     : isCompleted
-                    ? 'border-emerald-900/40 bg-emerald-950/10'
-                    : 'border-slate-800 bg-slate-900/40'
+                    ? 'border-emerald-200 bg-emerald-50/20'
+                    : 'border-slate-200 bg-white'
                 }`}
               >
                 {/* Header */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`p-2 rounded-xl border ${
+                      className={`p-2.5 rounded-xl border ${
                         isCompensated
-                          ? 'bg-purple-500/20 text-purple-400 border-purple-500/40'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
                           : isCompleted
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                          : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-blue-50 text-blue-700 border-blue-200'
                       }`}
                     >
-                      {isCompensated ? <RotateCcw className="w-4 h-4" /> : <Pill className="w-4 h-4" />}
+                      {isCompensated ? <RotateCcw className="w-5 h-5" /> : <Pill className="w-5 h-5" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-200">{saga.id}</span>
+                        <span className="font-mono text-xs font-bold text-slate-900">{saga.id}</span>
                         <StatusBadge status={saga.status} size="xs" />
                       </div>
-                      <h4 className="text-sm font-bold text-slate-100 mt-0.5">
+                      <h4 className="text-sm font-extrabold text-slate-900 mt-0.5">
                         {saga.quantity}x {saga.medicineName} ({saga.dosage})
                       </h4>
                     </div>
                   </div>
 
                   <div className="text-right text-xs">
-                    <div className="text-slate-200 font-medium">{saga.patientName}</div>
-                    <div className="text-slate-500 font-mono text-[10px]">{saga.patientId}</div>
+                    <div className="text-slate-900 font-bold">{saga.patientName}</div>
+                    <div className="text-slate-500 font-mono text-[10px] font-medium">{saga.patientId}</div>
                   </div>
                 </div>
 
-                {/* Interactive Multi-Step Pipeline Visualizer */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                {/* Multi-Step Pipeline Visualizer */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-3">
                   {saga.steps?.map((step, idx) => {
                     const isDone = step.status === 'done';
                     const isStepComp = step.status === 'compensated';
-                    const isPending = step.status === 'pending';
 
                     return (
                       <div
                         key={idx}
-                        className={`p-2.5 rounded-xl border text-xs flex flex-col justify-between ${
+                        className={`p-3 rounded-xl border text-xs flex flex-col justify-between ${
                           isStepComp
-                            ? 'bg-purple-950/40 border-purple-800 text-purple-300'
+                            ? 'bg-purple-50 border-purple-200 text-purple-900'
                             : isDone
-                            ? 'bg-emerald-950/30 border-emerald-900/60 text-emerald-300'
-                            : 'bg-slate-950/60 border-slate-800 text-slate-400'
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}
                       >
-                        <div className="flex items-center justify-between font-mono text-[11px] mb-1">
-                          <span className="font-semibold">
+                        <div className="flex items-center justify-between font-mono text-[11px] mb-1 font-semibold">
+                          <span>
                             {idx + 1}. {step.label || step.stepName}
                           </span>
                           <span>
                             {isStepComp ? (
-                              <span className="text-purple-400 flex items-center gap-1">
+                              <span className="text-purple-700 font-bold flex items-center gap-1">
                                 <RotateCcw className="w-3 h-3" /> REVERTED
                               </span>
                             ) : isDone ? (
-                              <span className="text-emerald-400 flex items-center gap-1">
+                              <span className="text-emerald-700 font-bold flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3" /> DONE
                               </span>
                             ) : (
-                              <span className="text-amber-400 flex items-center gap-1">
+                              <span className="text-amber-700 font-bold flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> QUEUED
                               </span>
                             )}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-400 truncate">
+                        <div className="text-[11px] text-slate-500 truncate font-medium">
                           {step.details || (isDone ? `Executed by ${step.actorName}` : 'Awaiting action')}
                         </div>
                       </div>
@@ -155,14 +151,14 @@ export default function SagaTracker() {
 
                 {/* Compensation Details Drawer (if Compensated) */}
                 {isCompensated && saga.compensationDetails && (
-                  <div className="p-3 rounded-xl bg-purple-950/30 border border-purple-500/40 text-xs text-purple-200 font-mono space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-purple-300">
-                      <ShieldCheck className="w-4 h-4" /> Automated Compensation Rollback Executed
+                  <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 font-mono space-y-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-purple-900">
+                      <ShieldCheck className="w-4 h-4 text-purple-700" /> Automated Compensation Rollback Executed
                     </div>
-                    <p className="text-[11px] text-purple-300/80">
+                    <p className="text-[11px] text-purple-800 font-medium">
                       Reason: "{saga.compensationDetails.reason}"
                     </p>
-                    <div className="flex items-center justify-between text-[10px] text-purple-400 pt-1 border-t border-purple-900/60">
+                    <div className="flex items-center justify-between text-[10px] text-purple-700 pt-1.5 border-t border-purple-200 font-semibold">
                       <span>Restored: +{saga.compensationDetails.stockRefunded} units to inventory</span>
                       <span>Actor: {saga.compensationDetails.actorName} ({saga.compensationDetails.actorRole})</span>
                     </div>

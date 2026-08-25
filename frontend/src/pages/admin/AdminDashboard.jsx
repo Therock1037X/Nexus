@@ -1,15 +1,10 @@
 import React from 'react';
 import {
-  Shield,
-  Building2,
-  GitMerge,
-  GitPullRequest,
-  History,
-  Activity,
   Bed,
-  Users,
-  AlertTriangle,
-  RotateCcw
+  Activity,
+  GitPullRequest,
+  GitMerge,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
@@ -18,60 +13,105 @@ import StatusBadge from '../../components/common/StatusBadge.jsx';
 
 export default function AdminDashboard() {
   const { currentUser } = useAuth();
-  const { stats, isSeeding, handleResetSeed } = useHospital();
+  const { stats } = useHospital();
 
   return (
     <div className="space-y-6">
-      {/* Top Welcome & Operations Command Telemetry */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 glass-panel rounded-3xl p-6 border border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-amber-950/40">
-            {currentUser?.avatar || 'AD'}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-100">{currentUser?.name || 'Hospital Operations Director'}</h2>
-              <StatusBadge status="normal" size="xs" />
+      {/* Top Welcome Header (Matching BhumiGIS Heading Pattern) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Live Resource Grid & Operations Hub
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Real-time multi-floor hospital capacity, optimistic concurrency control (OCC), and transactional state management.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-semibold">
+            Logged in as: <strong className="text-slate-800">{currentUser?.name || 'Operations Director'}</strong>
+          </span>
+          <StatusBadge status="normal" size="xs" />
+        </div>
+      </div>
+
+      {/* Top 4 Floating Metric & Stat Cards (Exact BhumiGIS Pattern) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Bed Occupancy */}
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bed Occupancy</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <Bed className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-400">
-              Operations Center • Real-Time Concurrency Governance & Audit Command
-            </p>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-slate-900">
+              {stats.occupancyRate}%
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • {stats.occupiedBeds + stats.reservedBeds} of {stats.totalBeds} beds allocated
+            </div>
           </div>
         </div>
 
-        {/* Global Live Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
-          <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
-            <span className="text-[10px] text-slate-400 uppercase block">Bed Occupancy</span>
-            <span className={`text-base font-bold ${stats.occupancyRate > 80 ? 'text-rose-400' : 'text-emerald-400'}`}>
-              {stats.occupancyRate}% ({stats.occupiedBeds + stats.reservedBeds}/{stats.totalBeds})
-            </span>
+        {/* Card 2: ICU Availability */}
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">ICU Beds Free</span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+              <Activity className="w-4 h-4" />
+            </div>
           </div>
-
-          <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
-            <span className="text-[10px] text-slate-400 uppercase block">ICU Available</span>
-            <span className={`text-base font-bold ${stats.freeIcuBeds <= 2 ? 'text-amber-400' : 'text-cyan-400'}`}>
-              {stats.freeIcuBeds} / {stats.icuBedsCount} Beds
-            </span>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-blue-700">
+              {stats.freeIcuBeds} <span className="text-sm font-semibold text-slate-500">/ {stats.icuBedsCount}</span>
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • {stats.freeIcuBeds <= 2 ? '⚠️ High Critical Demand' : 'Normal Reserve Capacity'}
+            </div>
           </div>
+        </div>
 
-          <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
-            <span className="text-[10px] text-slate-400 uppercase block">Active Sagas</span>
-            <span className="text-base font-bold text-purple-400">
-              {stats.inProgressSagasCount} Running
-            </span>
+        {/* Card 3: Active Sagas */}
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Sagas</span>
+            <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+              <GitPullRequest className="w-4 h-4" />
+            </div>
           </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-purple-700">
+              {stats.inProgressSagasCount}
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • Multi-step distributed transactions
+            </div>
+          </div>
+        </div>
 
-          <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 text-center">
-            <span className="text-[10px] text-slate-400 uppercase block">Conflicts Handled</span>
-            <span className="text-base font-bold text-rose-400">
-              {stats.conflictsCount} Events
-            </span>
+        {/* Card 4: OCC Conflicts Handled */}
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Conflicts Logged</span>
+            <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
+              <GitMerge className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-slate-900">
+              {stats.conflictsCount}
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • Deterministic resolution applied
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Live Resource Grid (4 Floors, Beds, OTs, Equipment, Medicines) */}
+      {/* Main Live Resource Grid */}
       <LiveResourceGrid />
     </div>
   );

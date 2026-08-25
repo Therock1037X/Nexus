@@ -4,18 +4,18 @@ import FlagIssueForm from '../../components/nurse/FlagIssueForm.jsx';
 
 export default function FlagIssuePage() {
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2 text-amber-400">
-          <AlertTriangle className="w-5 h-5" />
-          Flag Resource Sanitization / Maintenance
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+          <AlertTriangle className="w-6 h-6 text-amber-600" />
+          Flag Resource Maintenance & Sanitization
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Lock a bed, operating room, or biomedical equipment for cleaning or technical repair to protect clinical safety.
+        <p className="text-xs text-slate-500 font-medium mt-0.5">
+          Mark beds, operating suites, or biomedical equipment as undergoing cleaning or calibration to block conflict requests.
         </p>
       </div>
 
-      <div className="glass-panel rounded-3xl p-6 border border-slate-800">
+      <div className="clean-card p-6">
         <FlagIssueForm />
       </div>
     </div>

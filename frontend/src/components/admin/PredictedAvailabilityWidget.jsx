@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, AlertTriangle, Clock, RefreshCw, Loader2, Bed, Activity } from 'lucide-react';
+import { Sparkles, TrendingUp, RefreshCw, Loader2 } from 'lucide-react';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { getAvailabilityForecast } from '../../services/aiService.js';
 
@@ -23,84 +23,87 @@ export default function PredictedAvailabilityWidget() {
   }, [resources.length, events.length]);
 
   return (
-    <div className="glass-card rounded-2xl p-4 border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 via-slate-900/50 to-blue-950/20">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-            <TrendingUp className="w-4 h-4" />
+    <div className="clean-card p-6 border-emerald-100 bg-white">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <TrendingUp className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300 font-mono flex items-center gap-1.5">
-              Predictive Resource Availability (Feature 4)
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              Predictive Resource Availability & Demand Forecast
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                AI ADVISORY
+              </span>
             </h4>
-            <p className="text-[11px] text-slate-400">1-2 Hour Advisory Turnover Forecast</p>
+            <p className="text-xs text-slate-500 font-medium">1-2 Hour Advisory Turnover & Bed Release Projections</p>
           </div>
         </div>
 
         <button
           onClick={fetchForecast}
           disabled={loading}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-slate-200"
           title="Refresh AI Forecast"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
         </button>
       </div>
 
       {forecast ? (
-        <div className="space-y-3 text-xs">
+        <div className="space-y-4 text-xs">
           {/* Summary Banner */}
-          <p className="text-slate-300 text-xs leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <p className="text-slate-700 text-xs leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/80 font-medium">
             {forecast.summary}
           </p>
 
           {/* Metric Projections */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
-              <div className="text-[10px] font-mono text-slate-400 uppercase">Est. ICU Freeing</div>
-              <div className="text-base font-bold text-cyan-300 mt-0.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Est. ICU Freeing</div>
+              <div className="text-xl font-extrabold text-emerald-700 mt-1">
                 +{forecast.projectedFreedIcuBedsInNext2Hours || 1} Bed(s)
               </div>
-              <div className="text-[10px] text-slate-500 font-mono">Next 60-90 min</div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Next 60-90 min projection</div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
-              <div className="text-[10px] font-mono text-slate-400 uppercase">OT Turnover</div>
-              <div className="text-base font-bold text-purple-300 mt-0.5">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">OT Turnover</div>
+              <div className="text-xl font-extrabold text-blue-700 mt-1">
                 ~{forecast.projectedOtTurnoverMinutes || 30} mins
               </div>
-              <div className="text-[10px] text-slate-500 font-mono">OT-2 Cardiac wrap</div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5">OT-2 Cardiac procedure wrap</div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
-              <div className="text-[10px] font-mono text-slate-400 uppercase">Surge Bottleneck</div>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Surge Bottleneck</div>
               <div
-                className={`text-base font-bold mt-0.5 ${
+                className={`text-xl font-extrabold mt-1 ${
                   forecast.bottleneckRiskLevel === 'HIGH' || forecast.bottleneckRiskLevel === 'CRITICAL'
-                    ? 'text-rose-400'
-                    : 'text-amber-400'
+                    ? 'text-rose-700'
+                    : 'text-amber-700'
                 }`}
               >
                 {forecast.bottleneckRiskLevel || 'MODERATE'}
               </div>
-              <div className="text-[10px] text-slate-500 font-mono">Capacity Risk Tier</div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Capacity Risk Tier</div>
             </div>
           </div>
 
           {/* Actionable Recommendation */}
           {forecast.recommendedAction && (
-            <div className="p-2.5 rounded-xl bg-slate-950/90 border border-cyan-900/40 text-[11px] text-slate-300 flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-slate-800 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold text-cyan-300">Operational Advisory: </span>
-                <span className="text-slate-300">{forecast.recommendedAction}</span>
+                <span className="font-bold text-emerald-900">Operational Recommendation: </span>
+                <span className="text-slate-700 font-medium">{forecast.recommendedAction}</span>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="p-4 text-center text-slate-500 text-xs">
-          <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-cyan-400" />
+        <div className="p-6 text-center text-slate-500 text-xs">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
           Calculating predictive capacity model...
         </div>
       )}

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { HeartPulse, CheckCircle2, Loader2, User, Activity } from 'lucide-react';
+import { HeartPulse, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
-import { db, collection, doc, setDoc, DEFAULT_HOSPITAL_ID } from '../../firebase/firestore.js';
+import { db, doc, setDoc, DEFAULT_HOSPITAL_ID } from '../../firebase/firestore.js';
 
 export default function LogEventForm({ onSuccess = null }) {
   const { currentUser } = useAuth();
@@ -70,11 +70,11 @@ export default function LogEventForm({ onSuccess = null }) {
     <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       {/* Patient Selector */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Select Patient</label>
+        <label className="block text-slate-700 font-semibold mb-1">Select Patient</label>
         <select
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
-          className="glass-input w-full"
+          className="clean-input w-full font-medium"
         >
           {patients.map((p) => (
             <option key={p.patientId} value={p.patientId}>
@@ -86,11 +86,11 @@ export default function LogEventForm({ onSuccess = null }) {
 
       {/* Event Category */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Clinical Action Type</label>
+        <label className="block text-slate-700 font-semibold mb-1">Clinical Action Type</label>
         <select
           value={eventType}
           onChange={(e) => setEventType(e.target.value)}
-          className="glass-input w-full font-mono"
+          className="clean-input w-full font-medium"
         >
           <option value="vitals_recorded">Vitals & Hemodynamic Check</option>
           <option value="medicine_administered">Bedside Medication Administered</option>
@@ -103,42 +103,42 @@ export default function LogEventForm({ onSuccess = null }) {
 
       {/* Vitals Telemetry Inputs */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Bedside Vitals</label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <label className="block text-slate-700 font-semibold mb-1.5">Bedside Vitals</label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div>
-            <span className="text-[10px] text-slate-500 font-mono">HR (bpm)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">HR (bpm)</span>
             <input
               type="number"
               value={hr}
               onChange={(e) => setHr(e.target.value)}
-              className="glass-input w-full font-mono text-center"
+              className="clean-input w-full font-mono text-center font-bold"
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-mono">BP (mmHg)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">BP (mmHg)</span>
             <input
               type="text"
               value={bp}
               onChange={(e) => setBp(e.target.value)}
-              className="glass-input w-full font-mono text-center"
+              className="clean-input w-full font-mono text-center font-bold"
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-mono">SpO2 (%)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">SpO2 (%)</span>
             <input
               type="number"
               value={spo2}
               onChange={(e) => setSpo2(e.target.value)}
-              className="glass-input w-full font-mono text-center"
+              className="clean-input w-full font-mono text-center font-bold"
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-mono">Temp</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Temp</span>
             <input
               type="text"
               value={temp}
               onChange={(e) => setTemp(e.target.value)}
-              className="glass-input w-full font-mono text-center"
+              className="clean-input w-full font-mono text-center font-bold"
             />
           </div>
         </div>
@@ -146,25 +146,25 @@ export default function LogEventForm({ onSuccess = null }) {
 
       {/* Clinical Notes */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Clinical Observation Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Clinical Observation Notes</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="glass-input w-full"
+          className="clean-input w-full text-xs"
         />
       </div>
 
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${
+          className={`p-3.5 rounded-xl border flex items-center gap-2 text-xs font-semibold ${
             feedback.type === 'success'
-              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-              : 'bg-rose-950/30 border-rose-500/40 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           <span>{feedback.message}</span>
         </div>
       )}
@@ -173,7 +173,7 @@ export default function LogEventForm({ onSuccess = null }) {
       <button
         type="submit"
         disabled={submitting}
-        className="btn-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-950/30"
+        className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>

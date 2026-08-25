@@ -3,20 +3,16 @@ import {
   Bug,
   Flame,
   RotateCcw,
-  Zap,
-  CheckCircle2,
-  AlertTriangle,
-  Loader2,
   ShieldCheck,
   Play,
-  ArrowRight
+  Loader2
 } from 'lucide-react';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { allocateResourceTransaction } from '../../services/resourceService.js';
 import { startPrescriptionSaga, compensateSaga } from '../../services/sagaService.js';
 
 export default function FailureDemoPanel() {
-  const { resources, sagas, playAlertTone } = useHospital();
+  const { resources, playAlertTone } = useHospital();
   const [runningSim, setRunningSim] = useState(null);
   const [simResults, setSimResults] = useState([]);
 
@@ -191,87 +187,87 @@ export default function FailureDemoPanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Top Banner */}
       <div>
-        <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-          <Bug className="w-5 h-5 text-rose-400" />
+        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <Bug className="w-5 h-5 text-rose-600" />
           Failure & Chaos Simulation Control Panel
         </h3>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500 font-medium">
           Simulate concurrent race conditions, mid-saga failures, and service recoveries to prove deterministic conflict handling and rollback consistency in real-time.
         </p>
       </div>
 
       {/* Simulation Action Triggers */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Sim 1: Race Condition */}
-        <div className="glass-card rounded-2xl p-4 border border-rose-500/30 flex flex-col justify-between space-y-3">
+        <div className="clean-card p-5 border-rose-200 flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center gap-2 text-rose-400 font-mono font-bold text-xs">
+            <div className="flex items-center gap-2 text-rose-700 font-bold text-xs">
               <Flame className="w-4 h-4" /> 1. Concurrent Race Condition
             </div>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
               Fires 2 simultaneous requests at the exact same millisecond with different priorities (Normal vs Critical Preemption) targeting a scarce ICU bed.
             </p>
           </div>
           <button
             onClick={handleSimulateRaceCondition}
             disabled={!!runningSim}
-            className="btn-danger text-xs py-2 w-full font-bold flex items-center justify-center gap-1.5"
+            className="btn-danger text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
           >
             {runningSim === 'race' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-4 h-4" />
             )}
             Run Race Condition
           </button>
         </div>
 
         {/* Sim 2: Mid-Saga Rollback */}
-        <div className="glass-card rounded-2xl p-4 border border-purple-500/30 flex flex-col justify-between space-y-3">
+        <div className="clean-card p-5 border-purple-200 flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center gap-2 text-purple-400 font-mono font-bold text-xs">
+            <div className="flex items-center gap-2 text-purple-700 font-bold text-xs">
               <RotateCcw className="w-4 h-4" /> 2. Mid-Saga Compensation
             </div>
-            <p className="text-xs text-slate-300 mt-1">
-              Initiates an Adrenaline prescription (deducting stock), then simulates a mid-saga bedside abort to demonstrate automated stock restoration and saga state rollback.
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+              Initiates an Adrenaline prescription (deducting stock), then simulates a mid-saga bedside abort to demonstrate automated stock restoration and saga rollback.
             </p>
           </div>
           <button
             onClick={handleSimulateSagaRollback}
             disabled={!!runningSim}
-            className="btn-primary text-xs py-2 w-full font-bold flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500"
+            className="btn-purple text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
           >
             {runningSim === 'saga' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-4 h-4" />
             )}
             Run Saga Rollback Demo
           </button>
         </div>
 
         {/* Sim 3: Idempotency Deduplication */}
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/30 flex flex-col justify-between space-y-3">
+        <div className="clean-card p-5 border-blue-200 flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center gap-2 text-cyan-400 font-mono font-bold text-xs">
+            <div className="flex items-center gap-2 text-blue-700 font-bold text-xs">
               <ShieldCheck className="w-4 h-4" /> 3. Idempotency Key Replay
             </div>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
               Fires duplicate requests carrying identical idempotency keys to verify zero-duplicate state corruption.
             </p>
           </div>
           <button
             onClick={handleSimulateIdempotency}
             disabled={!!runningSim}
-            className="btn-secondary text-xs py-2 w-full font-bold flex items-center justify-center gap-1.5 border-slate-700"
+            className="btn-blue text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
           >
             {runningSim === 'idempotency' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-4 h-4" />
             )}
             Test Idempotency Replay
           </button>
@@ -279,29 +275,29 @@ export default function FailureDemoPanel() {
       </div>
 
       {/* Real-Time Simulation Output Terminal */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800 space-y-2">
+      <div className="clean-card p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono font-bold uppercase text-slate-400">
+          <span className="text-xs font-bold uppercase text-slate-800 tracking-wider">
             Simulation Telemetry Console
           </span>
           {simResults.length > 0 && (
             <button
               onClick={() => setSimResults([])}
-              className="text-[11px] text-slate-500 hover:text-slate-300"
+              className="text-xs text-slate-500 hover:text-slate-800 font-semibold"
             >
               Clear Log
             </button>
           )}
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 max-h-60 overflow-y-auto font-mono text-xs space-y-2">
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 max-h-64 overflow-y-auto font-mono text-xs space-y-2 text-slate-200">
           {simResults.length === 0 ? (
-            <div className="text-slate-500 text-center py-4">
+            <div className="text-slate-400 text-center py-6">
               Click any simulation button above to watch live transactional behavior.
             </div>
           ) : (
             simResults.map((r) => (
-              <div key={r.id} className="flex items-start gap-2 border-b border-slate-900 pb-1.5">
+              <div key={r.id} className="flex items-start gap-2.5 border-b border-slate-800 pb-2">
                 <span className="text-slate-500 text-[10px] flex-shrink-0 mt-0.5">{r.timestamp}</span>
                 <div>
                   <span
@@ -315,7 +311,7 @@ export default function FailureDemoPanel() {
                   >
                     [{r.title}]:
                   </span>{' '}
-                  <span className="text-slate-300">{r.details}</span>
+                  <span className="text-slate-200">{r.details}</span>
                 </div>
               </div>
             ))

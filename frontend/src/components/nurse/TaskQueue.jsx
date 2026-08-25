@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import {
-  ClipboardList,
   CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   Pill,
-  HeartPulse,
   User,
   Clock,
   Loader2
@@ -73,10 +70,10 @@ export default function TaskQueue({ onActionComplete = null }) {
 
   if (pendingNurseTasks.length === 0) {
     return (
-      <div className="glass-panel rounded-2xl p-8 text-center text-slate-400">
-        <CheckCircle2 className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
-        <p className="text-sm font-medium text-slate-200">Nurse Task Queue is Clean!</p>
-        <p className="text-xs text-slate-500 mt-1">
+      <div className="clean-card p-12 text-center text-slate-500">
+        <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-600 mb-2" />
+        <p className="text-sm font-bold text-slate-800">Nurse Task Queue is Clean!</p>
+        <p className="text-xs text-slate-500 mt-1 font-medium">
           No pending dispensed prescriptions awaiting bedside administration.
         </p>
       </div>
@@ -84,78 +81,78 @@ export default function TaskQueue({ onActionComplete = null }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {pendingNurseTasks.map((saga) => {
         const isProcessing = submittingId === saga.id;
 
         return (
           <div
             key={saga.id}
-            className="glass-card rounded-2xl p-4 border border-cyan-500/30 hover:border-cyan-500/50 transition-all"
+            className="clean-card p-5 border-emerald-200 bg-white"
           >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex items-start gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                  <Pill className="w-4 h-4" />
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                  <Pill className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-slate-400">{saga.id}</span>
+                    <span className="font-mono text-xs font-bold text-slate-900">{saga.id}</span>
                     <StatusBadge status="pending" size="xs" />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-100 mt-0.5">
+                  <h4 className="text-sm font-extrabold text-slate-900 mt-0.5">
                     Administer {saga.quantity}x {saga.medicineName}
                   </h4>
-                  <p className="text-xs text-cyan-300 font-medium">{saga.dosage}</p>
+                  <p className="text-xs text-emerald-800 font-semibold">{saga.dosage}</p>
                 </div>
               </div>
 
-              <div className="text-right font-mono text-[11px] text-slate-400">
-                <span className="flex items-center gap-1 text-slate-500">
-                  <Clock className="w-3 h-3" /> Dispensed by Pharmacy
+              <div className="text-right font-mono text-[11px] text-slate-500 font-medium">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" /> Dispensed by Pharmacy
                 </span>
               </div>
             </div>
 
             {/* Patient & Instructions */}
-            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs mb-3 flex items-center justify-between">
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs mb-3.5 flex items-center justify-between font-medium">
               <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-slate-200 font-medium">{saga.patientName}</span>
+                <User className="w-4 h-4 text-emerald-700" />
+                <span className="text-slate-900 font-bold">{saga.patientName}</span>
                 <span className="text-slate-500 font-mono">({saga.patientId})</span>
               </div>
               {saga.notes && (
-                <span className="text-[11px] text-slate-400 italic truncate max-w-[200px]">
+                <span className="text-[11px] text-slate-500 italic truncate max-w-[220px]">
                   "{saga.notes}"
                 </span>
               )}
             </div>
 
             {/* Step Progress Visualizer */}
-            <div className="grid grid-cols-3 gap-1.5 text-[11px] font-mono mb-3">
-              <div className="p-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-center">
+            <div className="grid grid-cols-3 gap-2 text-[11px] font-mono mb-4 font-semibold">
+              <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-center">
                 1. Order ✓
               </div>
-              <div className="p-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-center">
+              <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-center">
                 2. Dispensed ✓
               </div>
-              <div className="p-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/50 text-cyan-300 text-center font-bold animate-pulse">
+              <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-center font-bold animate-pulse">
                 3. Administer (You)
               </div>
             </div>
 
             {/* Nurse Action Buttons */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center gap-2.5 pt-3 border-t border-slate-100">
               <button
                 onClick={() => handleAdminister(saga)}
                 disabled={isProcessing}
-                className="flex-1 btn-primary text-xs py-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-950/40"
+                className="flex-1 btn-primary text-xs py-2.5 flex items-center justify-center gap-2 font-bold"
               >
                 {isProcessing ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Administered & Log Vitals
+                    <CheckCircle2 className="w-4 h-4" /> Confirm Administered & Log Vitals
                   </>
                 )}
               </button>
@@ -163,10 +160,10 @@ export default function TaskQueue({ onActionComplete = null }) {
               <button
                 onClick={() => setAbortModalSaga(saga)}
                 disabled={isProcessing}
-                className="btn-danger text-xs py-2 px-3 flex items-center gap-1.5 flex-shrink-0"
+                className="btn-danger text-xs py-2.5 px-4 flex items-center gap-1.5 flex-shrink-0 font-bold"
                 title="Trigger automated compensation & stock rollback"
               >
-                <RotateCcw className="w-3.5 h-3.5" /> Abort / Allergic Reaction
+                <RotateCcw className="w-4 h-4" /> Abort / Reaction
               </button>
             </div>
           </div>
@@ -175,38 +172,38 @@ export default function TaskQueue({ onActionComplete = null }) {
 
       {/* Compensation / Abort Modal */}
       {abortModalSaga && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="glass-panel max-w-md w-full rounded-2xl p-6 border border-rose-700/80 shadow-2xl">
-            <div className="flex items-center gap-2.5 text-rose-400 mb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white max-w-md w-full rounded-2xl p-6 border border-slate-200 shadow-xl">
+            <div className="flex items-center gap-2.5 text-rose-700 mb-3">
               <RotateCcw className="w-5 h-5 animate-spin" />
-              <h3 className="text-base font-bold text-slate-100">Trigger Saga Compensation (Rollback)</h3>
+              <h3 className="text-base font-bold text-slate-900">Trigger Saga Compensation (Rollback)</h3>
             </div>
 
-            <p className="text-xs text-slate-300 mb-3">
+            <p className="text-xs text-slate-600 mb-3.5 leading-relaxed font-medium">
               Aborting this saga will automatically execute the defined compensating action: <strong>{abortModalSaga.quantity}x {abortModalSaga.medicineName}</strong> will be refunded to pharmacy inventory via an atomic Firestore transaction.
             </p>
 
             <div className="mb-4">
-              <label className="block text-xs font-medium text-slate-300 mb-1">Clinical Abort Reason</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Clinical Abort Reason</label>
               <textarea
                 rows={2}
                 value={abortReason}
                 onChange={(e) => setAbortReason(e.target.value)}
-                className="glass-input w-full text-xs"
+                className="clean-input w-full text-xs"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2.5">
               <button
                 onClick={() => setAbortModalSaga(null)}
-                className="btn-secondary text-xs px-3 py-1.5"
+                className="btn-secondary text-xs px-3.5 py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleCompensate(abortModalSaga)}
                 disabled={submittingId === abortModalSaga.id}
-                className="btn-danger text-xs px-4 py-1.5 font-bold"
+                className="btn-danger text-xs px-4 py-2 font-bold"
               >
                 Confirm Compensation Rollback
               </button>

@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import {
   History,
   Search,
-  Filter,
-  Sparkles,
-  Download,
-  Calendar,
-  Layers,
-  ChevronDown
+  Download
 } from 'lucide-react';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import LiveFeedItem from '../common/LiveFeedItem.jsx';
@@ -51,24 +46,24 @@ export default function AuditTrailSearch() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Top Header & Export */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <History className="w-5 h-5 text-cyan-400" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <History className="w-5 h-5 text-emerald-700" />
             Immutable Audit Trail & Ledger
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 font-medium">
             Cryptographically append-only audit stream tracking every transactional resource mutation with version lineage and idempotency keys.
           </p>
         </div>
 
         <button
           onClick={exportJson}
-          className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 flex-shrink-0"
+          className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 flex-shrink-0"
         >
-          <Download className="w-3.5 h-3.5" /> Export JSON Log
+          <Download className="w-4 h-4 text-slate-600" /> Export JSON Log
         </button>
       </div>
 
@@ -76,8 +71,8 @@ export default function AuditTrailSearch() {
       <AIExplanationPanel events={filteredEvents.slice(0, 15)} />
 
       {/* Filter Bar */}
-      <div className="glass-card rounded-2xl p-3.5 border border-slate-800 space-y-2.5">
-        <div className="flex flex-col md:flex-row gap-2">
+      <div className="clean-card p-5 space-y-3">
+        <div className="flex flex-col md:flex-row gap-3">
           {/* Search Box */}
           <div className="relative flex-1">
             <input
@@ -85,16 +80,16 @@ export default function AuditTrailSearch() {
               placeholder="Search by Resource (e.g. ICU-201), Patient, Doctor, or Idempotency Key..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="glass-input w-full pl-9 text-xs"
+              className="clean-input w-full pl-9 text-xs"
             />
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           </div>
 
           {/* Event Type Filter */}
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="glass-input text-xs font-mono md:w-48"
+            className="clean-input text-xs font-medium md:w-52"
           >
             <option value="all">All Event Types ({events.length})</option>
             <option value="allocate">Allocate / Reserve</option>
@@ -111,7 +106,7 @@ export default function AuditTrailSearch() {
           <select
             value={selectedActorRole}
             onChange={(e) => setSelectedActorRole(e.target.value)}
-            className="glass-input text-xs font-mono md:w-40"
+            className="clean-input text-xs font-medium md:w-44"
           >
             <option value="all">All Roles</option>
             <option value="doctor">Doctor</option>
@@ -121,20 +116,20 @@ export default function AuditTrailSearch() {
           </select>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-1">
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-1 font-medium">
           <span>Showing {filteredEvents.length} of {events.length} immutable events</span>
-          <span>Zero Plain `.update()` Calls Guarantee</span>
+          <span className="text-emerald-700 font-bold">Zero Plain `.update()` Calls Guarantee</span>
         </div>
       </div>
 
       {/* Events Stream */}
       {filteredEvents.length === 0 ? (
-        <div className="glass-panel rounded-2xl p-8 text-center text-slate-400">
-          <History className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-          <p className="text-sm font-medium text-slate-300">No events matched your search criteria.</p>
+        <div className="clean-card p-12 text-center text-slate-500">
+          <History className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+          <p className="text-sm font-bold text-slate-800">No events matched your search criteria.</p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {filteredEvents.map((evt) => (
             <LiveFeedItem key={evt.id} event={evt} />
           ))}

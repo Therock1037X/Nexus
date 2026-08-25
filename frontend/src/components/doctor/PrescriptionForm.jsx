@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Pill, ShieldCheck, AlertTriangle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { Pill, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { startPrescriptionSaga } from '../../services/sagaService.js';
-import StatusBadge from '../common/StatusBadge.jsx';
 
 export default function PrescriptionForm({ preselectedPatient = null, onSuccess = null }) {
   const { currentUser } = useAuth();
@@ -66,11 +65,11 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
     <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       {/* Patient Selector */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Target Patient</label>
+        <label className="block text-slate-700 font-semibold mb-1">Target Patient</label>
         <select
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
-          className="glass-input w-full"
+          className="clean-input w-full font-medium"
         >
           {patients.map((p) => (
             <option key={p.patientId} value={p.patientId}>
@@ -83,10 +82,10 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       {/* Medicine Inventory Selector */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-slate-300 font-medium">Select Pharmaceutical</label>
+          <label className="text-slate-700 font-semibold">Select Pharmaceutical</label>
           {selectedMed && (
-            <span className="font-mono text-[11px] text-slate-400">
-              Live Stock: <strong className={isStockScarce ? 'text-amber-400' : 'text-emerald-400'}>{selectedMed.quantity} {selectedMed.unit}</strong>
+            <span className="font-mono text-[11px] text-slate-500 font-medium">
+              Live Stock: <strong className={isStockScarce ? 'text-amber-700' : 'text-emerald-700'}>{selectedMed.quantity} {selectedMed.unit}</strong>
             </span>
           )}
         </div>
@@ -94,7 +93,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
         <select
           value={medicineId}
           onChange={(e) => setMedicineId(e.target.value)}
-          className="glass-input w-full font-mono"
+          className="clean-input w-full font-mono font-medium"
         >
           {medicines.map((m) => (
             <option key={m.id} value={m.id}>
@@ -105,8 +104,8 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
 
         {/* Scarce stock warning box */}
         {isStockScarce && (
-          <div className="mt-2 p-2 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-300 flex items-center gap-2 text-[11px]">
-            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-amber-400" />
+          <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2 text-[11px] font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-600" />
             <span>
               Low Stock Notice: Only {selectedMed.quantity} {selectedMed.unit} remaining. Perfect for demoing automated stock rollbacks!
             </span>
@@ -115,56 +114,56 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       </div>
 
       {/* Quantity & Dosage */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Quantity to Deduct</label>
+          <label className="block text-slate-700 font-semibold mb-1">Quantity to Deduct</label>
           <input
             type="number"
             min="1"
             max="100"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            className="glass-input w-full font-mono"
+            className="clean-input w-full font-mono font-bold"
           />
         </div>
 
         <div>
-          <label className="block text-slate-300 font-medium mb-1">Dosage & Frequency</label>
+          <label className="block text-slate-700 font-semibold mb-1">Dosage & Frequency</label>
           <input
             type="text"
             value={dosage}
             onChange={(e) => setDosage(e.target.value)}
             placeholder="e.g. 500mg IV stat, then Q8H"
-            className="glass-input w-full"
+            className="clean-input w-full"
           />
         </div>
       </div>
 
       {/* Clinical Notes */}
       <div>
-        <label className="block text-slate-300 font-medium mb-1">Clinical Instructions & Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Clinical Instructions & Notes</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="e.g. Monitor blood pressure and telemetry 15 mins post-injection..."
-          className="glass-input w-full"
+          className="clean-input w-full"
         />
       </div>
 
       {/* Feedback */}
       {feedback && (
         <div
-          className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${
+          className={`p-3.5 rounded-xl border flex items-center gap-2 text-xs font-semibold ${
             feedback.type === 'success'
-              ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-              : 'bg-rose-950/30 border-rose-500/40 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-rose-50 border-rose-200 text-rose-800'
           }`}
         >
           {feedback.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
           ) : (
-            <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
           )}
           <span>{feedback.message}</span>
         </div>
@@ -174,7 +173,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       <button
         type="submit"
         disabled={submitting || isStockInsufficient}
-        className="btn-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-950/30"
+        className="btn-purple w-full py-3 text-xs font-bold flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>

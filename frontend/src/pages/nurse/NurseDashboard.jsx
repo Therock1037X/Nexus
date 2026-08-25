@@ -4,10 +4,10 @@ import {
   ClipboardList,
   HeartPulse,
   AlertTriangle,
-  CheckCircle2,
-  X,
+  Pill,
   Bed,
-  Plus
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
@@ -27,67 +27,97 @@ export default function NurseDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome & Ward Telemetry Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel rounded-3xl p-6 border border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-emerald-950/40">
-            {currentUser?.avatar || 'NR'}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-100">{currentUser?.name || 'Charge Nurse'}</h2>
-              <StatusBadge status="done" size="xs" />
-            </div>
-            <p className="text-xs text-slate-400">
-              Ward: {currentUser?.wardAssigned || 'General Floor 1'} • Bedside Care & Saga Execution Station
-            </p>
-          </div>
+      {/* Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            Nurse Care & Task Command Station
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Ward: {currentUser?.wardAssigned || 'General Floor 1'} • Bedside medication administration, vitals recording, and bed turnover.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setActiveModal('log')}
-            className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500"
+            className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5 font-bold"
           >
-            <HeartPulse className="w-4 h-4" /> Log Clinical Event / Vitals
+            <HeartPulse className="w-4 h-4" /> Log Vitals / Event
           </button>
 
           <button
             onClick={() => setActiveModal('flag')}
-            className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 border-slate-700"
+            className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 font-bold"
           >
-            <AlertTriangle className="w-4 h-4 text-amber-400" /> Flag Sanitization
+            <AlertTriangle className="w-4 h-4 text-amber-600" /> Flag Sanitization
           </button>
         </div>
       </div>
 
-      {/* Quick Ward Status Telemetry */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
-        <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-          <div className="text-[10px] text-slate-400 uppercase">Active Prescriptions Queued</div>
-          <div className="text-xl font-bold text-purple-400 mt-0.5">{inProgressSagas.length} Sagas</div>
+      {/* 3 Floating Stat Metric Cards (BhumiGIS Style) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Prescriptions</span>
+            <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+              <Pill className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-purple-700">
+              {inProgressSagas.length} <span className="text-sm font-semibold text-slate-500">Sagas</span>
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • Awaiting bedside administration
+            </div>
+          </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-          <div className="text-[10px] text-slate-400 uppercase">Beds Undergoing Sanitization</div>
-          <div className="text-xl font-bold text-cyan-400 mt-0.5">{bedsNeedingCleaning.length} Units</div>
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Beds in Sanitization</span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+              <Bed className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-blue-700">
+              {bedsNeedingCleaning.length} <span className="text-sm font-semibold text-slate-500">Units</span>
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • Cleaning & disinfection in progress
+            </div>
+          </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-          <div className="text-[10px] text-slate-400 uppercase">Ward Occupancy Health</div>
-          <div className="text-xl font-bold text-emerald-400 mt-0.5">NOMINAL (RTS SYNCED)</div>
+        <div className="clean-card p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ward System Status</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-extrabold text-emerald-700">
+              NOMINAL
+            </div>
+            <div className="text-xs text-slate-500 font-medium mt-1">
+              • Real-time concurrency connected
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Task Queue from Active Prescriptions */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-emerald-400" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-emerald-700" />
             Bedside Administration Queue (Step 3 in Saga Loop)
           </h3>
-          <span className="text-xs font-mono text-slate-400">
-            Real-Time Firestore Subscription
+          <span className="text-xs font-mono text-slate-500 font-bold">
+            Real-Time Live Feed
           </span>
         </div>
 
@@ -96,22 +126,22 @@ export default function NurseDashboard() {
 
       {/* Action Modals */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in">
-          <div className="glass-panel max-w-lg w-full rounded-3xl p-6 border border-slate-700/80 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white max-w-lg w-full rounded-2xl p-6 border border-slate-200 shadow-xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setActiveModal(null)}
-              className="absolute top-5 right-5 p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              className="absolute top-4 right-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
             >
               <X className="w-5 h-5" />
             </button>
 
             {activeModal === 'log' && (
               <div>
-                <h3 className="text-base font-bold text-slate-100 mb-1 flex items-center gap-2">
-                  <HeartPulse className="w-5 h-5 text-emerald-400" /> Log Clinical Event & Vitals
+                <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+                  <HeartPulse className="w-5 h-5 text-emerald-700" /> Log Clinical Event & Vitals
                 </h3>
-                <p className="text-xs text-slate-400 mb-4">
-                  Appends an immutable clinical observation to the patient's record and event stream.
+                <p className="text-xs text-slate-500 mb-4 font-medium">
+                  Appends an immutable clinical observation to the patient's record and audit log.
                 </p>
                 <LogEventForm onSuccess={() => setTimeout(() => setActiveModal(null), 1000)} />
               </div>
@@ -119,10 +149,10 @@ export default function NurseDashboard() {
 
             {activeModal === 'flag' && (
               <div>
-                <h3 className="text-base font-bold text-slate-100 mb-1 flex items-center gap-2 text-amber-400">
+                <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2 text-amber-700">
                   <AlertTriangle className="w-5 h-5" /> Flag Resource Maintenance or Sanitization
                 </h3>
-                <p className="text-xs text-slate-400 mb-4">
+                <p className="text-xs text-slate-500 mb-4 font-medium">
                   Marks bed/equipment as cleaning or maintenance to prevent conflict allocations.
                 </p>
                 <FlagIssueForm onSuccess={() => setTimeout(() => setActiveModal(null), 1000)} />

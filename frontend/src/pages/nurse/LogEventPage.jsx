@@ -4,18 +4,18 @@ import LogEventForm from '../../components/nurse/LogEventForm.jsx';
 
 export default function LogEventPage() {
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-          <HeartPulse className="w-5 h-5 text-emerald-400" />
-          Log Clinical Event & Bedside Telemetry
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+          <HeartPulse className="w-6 h-6 text-emerald-700" />
+          Log Clinical Bedside Event & Vitals
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Record vitals, medicine administration, catheter changes, wound care, and nursing interventions into the immutable audit stream.
+        <p className="text-xs text-slate-500 font-medium mt-0.5">
+          Record nursing observations, vital telemetry checks, and patient bed rotations directly into the immutable audit ledger.
         </p>
       </div>
 
-      <div className="glass-panel rounded-3xl p-6 border border-slate-800">
+      <div className="clean-card p-6">
         <LogEventForm />
       </div>
     </div>
