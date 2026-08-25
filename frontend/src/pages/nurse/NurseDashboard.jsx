@@ -7,22 +7,23 @@ import {
   Pill,
   Bed,
   CheckCircle2,
-  X
+  Users
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import TaskQueue from '../../components/nurse/TaskQueue.jsx';
 import LogEventForm from '../../components/nurse/LogEventForm.jsx';
 import FlagIssueForm from '../../components/nurse/FlagIssueForm.jsx';
-import StatusBadge from '../../components/common/StatusBadge.jsx';
+import NursePatientList from '../../components/nurse/NursePatientList.jsx';
 
 export default function NurseDashboard() {
   const { currentUser } = useAuth();
-  const { resources, sagas } = useHospital();
+  const { resources, sagas, patients } = useHospital();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam || 'queue');
+  const [preselectedPatientId, setPreselectedPatientId] = useState(null);
 
   useEffect(() => {
     if (tabParam && tabParam !== activeTab) {
@@ -34,8 +35,6 @@ export default function NurseDashboard() {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId });
   };
-
-  const [activeModal, setActiveModal] = useState(null); // 'log' | 'flag'
 
   const inProgressSagas = sagas.filter(s => s.status === 'in_progress');
   const bedsNeedingCleaning = resources.filter(r => r.status === 'cleaning' || r.status === 'maintenance');
@@ -49,8 +48,9 @@ export default function NurseDashboard() {
 
   const tabs = [
     { id: 'queue', label: 'Task Queue', icon: ClipboardList, badge: pendingNurseTasksCount, badgeColor: pendingNurseTasksCount > 0 ? 'bg-blue-50 text-blue-800' : 'bg-slate-300/60 text-slate-700' },
+    { id: 'patients', label: 'My Patients', icon: Users, badge: patients.length },
     { id: 'log', label: 'Log Care Event', icon: HeartPulse, badge: 'Vitals' },
-    { id: 'flag', label: 'Flag Issue', icon: AlertTriangle, badge: bedsNeedingCleaning.length, badgeColor: bedsNeedingCleaning.length > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-300/60 text-slate-700' }
+    { id: 'flag', label: 'Report a Problem', icon: AlertTriangle, badge: bedsNeedingCleaning.length, badgeColor: bedsNeedingCleaning.length > 0 ? 'bg-amber-50 text-amber-800' : 'bg-slate-300/60 text-slate-700' }
   ];
 
   return (
@@ -59,20 +59,21 @@ export default function NurseDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-            Nurse Care & Task Station
+            Nurse Dashboard
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Ward: {currentUser?.wardAssigned || 'General Floor 1'} • Active nurse: <strong className="text-slate-800">{currentUser?.name || 'Nurse Pooja Pawar'}</strong>
+            Ward: {currentUser?.wardAssigned || 'General Floor 1'} • Attending nurse: <strong className="text-slate-800">{currentUser?.name || 'Nurse Pooja Pawar'}</strong>
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-semibold">Ward Concurrency:</span>
-          <StatusBadge status="done" size="xs" />
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+            ● Station Active
+          </span>
         </div>
       </div>
 
-      {/* Horizontal Feature Tab Bar (Directly below header) */}
+      {/* Horizontal Feature Tab Bar */}
       <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/70 border border-slate-300/60 rounded-2xl w-full sm:w-fit overflow-x-auto shadow-xs">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -106,55 +107,55 @@ export default function NurseDashboard() {
       {/* Tab 1: Task Queue (Default) */}
       {activeTab === 'queue' && (
         <div className="space-y-6 animate-in fade-in duration-150">
-          {/* 3 Floating Stat Metric Cards */}
+          {/* 3 Stat Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Prescriptions</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Medication Tasks</span>
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
                   <Pill className="w-4 h-4" />
                 </div>
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-purple-700">
-                  {inProgressSagas.length} <span className="text-sm font-semibold text-slate-500">Sagas</span>
+                  {inProgressSagas.length} <span className="text-sm font-semibold text-slate-500">Orders</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • In-progress hospital sagas
+                  • In-progress prescriptions
                 </div>
               </div>
             </div>
 
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Beds in Sanitization</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Beds Being Cleaned</span>
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
                   <Bed className="w-4 h-4" />
                 </div>
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-blue-700">
-                  {bedsNeedingCleaning.length} <span className="text-sm font-semibold text-slate-500">Units</span>
+                  {bedsNeedingCleaning.length} <span className="text-sm font-semibold text-slate-500">Beds</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Cleaning & disinfection in progress
+                  • Sanitization in progress
                 </div>
               </div>
             </div>
 
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ward System Status</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ward Status</span>
                 <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-emerald-700">
-                  NOMINAL
+                  READY
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Real-time concurrency connected
+                  • All care systems operational
                 </div>
               </div>
             </div>
@@ -164,10 +165,10 @@ export default function NurseDashboard() {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-emerald-700" />
-                Bedside Administration Queue (Step 3 in Saga Loop)
+                Medication Delivery Queue
               </h3>
-              <span className="text-xs font-mono text-slate-500 font-bold">
-                Real-Time Live Feed
+              <span className="text-xs text-slate-500 font-semibold">
+                Updated in real time
               </span>
             </div>
 
@@ -176,39 +177,64 @@ export default function NurseDashboard() {
         </div>
       )}
 
-      {/* Tab 2: Log Care Event */}
+      {/* Tab 2: My Patients */}
+      {activeTab === 'patients' && (
+        <div className="space-y-6 animate-in fade-in duration-150">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-700" />
+              Ward Patient Roster
+            </h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Patients currently admitted to your ward area. You can log vitals or review their chart directly.
+            </p>
+          </div>
+
+          <NursePatientList
+            onSelectPatientForLog={(pid) => {
+              setPreselectedPatientId(pid);
+              handleTabChange('log');
+            }}
+          />
+        </div>
+      )}
+
+      {/* Tab 3: Log Care Event */}
       {activeTab === 'log' && (
         <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-150">
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <HeartPulse className="w-5 h-5 text-emerald-700" />
-              Log Clinical Bedside Event & Vitals
+              Log Patient Care & Vitals
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Record nursing observations, vital telemetry checks, and patient bed rotations directly into the immutable audit ledger.
+              Log vitals and care given to this patient.
             </p>
           </div>
 
-          <div className="clean-card p-6">
-            <LogEventForm />
+          <div className="clean-card p-6 bg-white">
+            <LogEventForm
+              initialPatientId={preselectedPatientId}
+              onSuccess={() => setPreselectedPatientId(null)}
+            />
           </div>
         </div>
       )}
 
-      {/* Tab 3: Flag Issue */}
+      {/* Tab 4: Report a Problem */}
       {activeTab === 'flag' && (
         <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-150">
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
-              Flag Resource Maintenance & Sanitization
+              Report a Problem
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Mark beds, operating suites, or biomedical equipment as undergoing cleaning or calibration to block conflict requests.
+              e.g. bed needs cleaning, equipment not working
             </p>
           </div>
 
-          <div className="clean-card p-6">
+          <div className="clean-card p-6 bg-white">
             <FlagIssueForm />
           </div>
         </div>

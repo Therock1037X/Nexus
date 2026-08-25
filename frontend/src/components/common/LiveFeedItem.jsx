@@ -27,10 +27,27 @@ export default function LiveFeedItem({ event, onExplain = null }) {
     payload = {}
   } = event;
 
+  const eventLabels = {
+    allocate: 'Bed / Unit Assigned',
+    reserve: 'Bed Reserved',
+    conflict_rejected: 'Request Declined',
+    escalation_preemption: 'Priority Override',
+    escalate: 'Emergency Override',
+    transfer: 'Bed Transfer',
+    cancel: 'Discharge / Released',
+    saga_compensate: 'Cancelled & Returned',
+    clinical_event: 'Care / Vitals Logged',
+    patient_admitted: 'Patient Admitted',
+    patient_reassigned: 'Doctor Reassigned',
+    document_uploaded: 'Document Attached',
+    status_change: 'Status Updated'
+  };
+
   const getEventIcon = () => {
     switch (type) {
       case 'allocate':
       case 'reserve':
+      case 'patient_admitted':
         return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
       case 'conflict_rejected':
         return <AlertOctagon className="w-4 h-4 text-rose-600" />;
@@ -38,6 +55,7 @@ export default function LiveFeedItem({ event, onExplain = null }) {
       case 'escalate':
         return <Sparkles className="w-4 h-4 text-amber-600" />;
       case 'transfer':
+      case 'patient_reassigned':
         return <ArrowRightLeft className="w-4 h-4 text-blue-600" />;
       case 'saga_compensate':
         return <RotateCcw className="w-4 h-4 text-purple-600" />;
@@ -77,17 +95,12 @@ export default function LiveFeedItem({ event, onExplain = null }) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-xs font-bold text-slate-900 uppercase tracking-wide">
-                {type.replace('_', ' ')}
+              <span className="text-xs font-bold text-slate-900 tracking-tight">
+                {eventLabels[type] || type.replace('_', ' ')}
               </span>
               <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                 {resourceId}
               </span>
-              {resultingVersion && (
-                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 font-medium">
-                  v{resultingVersion}
-                </span>
-              )}
             </div>
 
             {/* Actor & Action Description */}
@@ -124,13 +137,13 @@ export default function LiveFeedItem({ event, onExplain = null }) {
         </div>
       </div>
 
-      {/* Expanded Payload & Idempotency Inspector */}
+      {/* Expanded Payload Inspector */}
       {expanded && (
         <div className="mt-3 pt-3 border-t border-slate-200/80 text-xs font-mono space-y-2">
           {idempotencyKey && (
             <div className="flex items-center justify-between text-[11px] text-slate-600">
               <span className="flex items-center gap-1 text-slate-500 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Idempotency Key:
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Request Token:
               </span>
               <span className="truncate max-w-[200px] text-slate-800 font-semibold">{idempotencyKey}</span>
             </div>

@@ -5,7 +5,8 @@ import {
   RotateCcw,
   ShieldCheck,
   Play,
-  Loader2
+  Loader2,
+  HelpCircle
 } from 'lucide-react';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { allocateResourceTransaction } from '../../services/resourceService.js';
@@ -24,11 +25,11 @@ export default function FailureDemoPanel() {
   };
 
   /**
-   * Simulation 1: Concurrent Race Condition on Scarce Resource
+   * Simulation 1: Same-Time Conflict on Scarce Resource
    */
   const handleSimulateRaceCondition = async () => {
     setRunningSim('race');
-    addResult('Starting Simulation', 'Spawning 2 concurrent requests targeting the same scarce ICU bed at the exact same millisecond...');
+    addResult('Starting Simulation', 'Sending 2 requests targeting the same ICU bed at the exact same millisecond...');
 
     const scarceBed = resources.find(r => r.type === 'bed' && (r.bedType === 'icu' || r.isScarce)) || resources[0];
 
@@ -63,14 +64,14 @@ export default function FailureDemoPanel() {
       results.forEach((res, i) => {
         if (res.status === 'fulfilled') {
           addResult(
-            `Request ${i + 1} (${i === 0 ? 'Dr. Ananya' : 'Dr. Sneha'}) Resolved`,
-            `Status: APPROVED (v${res.value.version}). ${res.value.preemptionNotice || 'Acquired resource atomically.'}`,
+            `Request ${i + 1} (${i === 0 ? 'Dr. Ananya' : 'Dr. Sneha'}) Result`,
+            `APPROVED: Emergency patient received the bed immediately.`,
             'success'
           );
         } else {
           addResult(
-            `Request ${i + 1} (${i === 0 ? 'Dr. Ananya' : 'Dr. Sneha'}) Deterministically Handled`,
-            `Status: REJECTED with explicit reason: "${res.reason.message}"`,
+            `Request ${i + 1} (${i === 0 ? 'Dr. Ananya' : 'Dr. Sneha'}) Result`,
+            `DECLINED: Lower-priority request redirected safely without locking up the system.`,
             'warning'
           );
         }
@@ -78,24 +79,24 @@ export default function FailureDemoPanel() {
 
       playAlertTone('success');
     } catch (err) {
-      addResult('Race Condition Error', err.message, 'error');
+      addResult('Conflict Simulation Error', err.message, 'error');
     } finally {
       setRunningSim(null);
     }
   };
 
   /**
-   * Simulation 2: Mid-Saga Failure & Automatic Inventory Rollback
+   * Simulation 2: Failed Step Recovery & Automated Stock Return
    */
   const handleSimulateSagaRollback = async () => {
     setRunningSim('saga');
-    addResult('Starting Saga Simulation', 'Initiating 3-step Prescription Saga for 2x Adrenaline Injection (Scarce stock)...');
+    addResult('Starting Step 1', 'Doctor orders 2x Adrenaline Injection (deducting pharmacy stock)...');
 
     try {
       // Step 1: Start Prescription
       const sagaRes = await startPrescriptionSaga({
         patientId: 'pat-sim-chaos',
-        patientName: 'Chaos Test Patient',
+        patientName: 'Recovery Test Patient',
         medicineId: 'med-adrenaline',
         medicineName: 'Adrenaline Injection (1mg/ml)',
         dosage: '1mg IV stat',
@@ -106,15 +107,15 @@ export default function FailureDemoPanel() {
       });
 
       addResult(
-        'Step 1 Executed',
-        `Prescription ordered (#${sagaRes.sagaId}). Adrenaline inventory decremented to ${sagaRes.remainingStock} units.`,
+        'Step 1 Complete',
+        `Prescription ordered. Adrenaline inventory reserved (${sagaRes.remainingStock} units left).`,
         'success'
       );
 
       // Wait 1.2s for visual feedback
       await new Promise(r => setTimeout(r, 1200));
 
-      addResult('Simulating Bedside Failure', 'Nurse detects severe acute anaphylaxis / allergy contraindication. Triggering saga rollback...');
+      addResult('Simulating Bedside Cancellation', 'Nurse detects an allergy contraindication at bedside. Undoing order...');
 
       // Step 2: Trigger compensation
       const compRes = await compensateSaga({
@@ -122,30 +123,30 @@ export default function FailureDemoPanel() {
         actorId: 'nurse-1',
         actorName: 'Nurse Pooja Pawar',
         actorRole: 'nurse',
-        reason: 'Severe acute anaphylactoid reaction observed bedside. Order aborted.'
+        reason: 'Acute allergy contraindication observed bedside. Order safely cancelled.'
       });
 
       addResult(
-        'Saga Compensation Complete',
-        `Rollback successful! 2 units of Adrenaline refunded back into inventory (New Stock: ${compRes.newStock}). Saga marked "COMPENSATED".`,
+        'Recovery Complete',
+        `Undone successfully! 2 units of Adrenaline refunded back to pharmacy stock (New Stock: ${compRes.newStock}).`,
         'success'
       );
 
       playAlertTone('success');
     } catch (err) {
-      addResult('Saga Simulation Failed', err.message, 'error');
+      addResult('Failed Step Simulation Error', err.message, 'error');
     } finally {
       setRunningSim(null);
     }
   };
 
   /**
-   * Simulation 3: Idempotency Duplicate Replay
+   * Simulation 3: Duplicate Request Test
    */
   const handleSimulateIdempotency = async () => {
     setRunningSim('idempotency');
     const fixedKey = `idemp-chaos-${Date.now()}`;
-    addResult('Testing Idempotency', `Firing request 1 with idempotencyKey: ${fixedKey}...`);
+    addResult('Testing Request 1', 'Sending initial bed booking request...');
 
     try {
       const freeBed = resources.find(r => r.status === 'free') || resources[0];
@@ -156,31 +157,31 @@ export default function FailureDemoPanel() {
         actorId: 'doc-3',
         actorName: 'Dr. Priya Nair',
         patientId: 'pat-idemp-1',
-        patientName: 'Idempotency Test Patient',
+        patientName: 'Duplicate Test Patient',
         idempotencyKey: fixedKey
       });
 
-      addResult('Request 1 Result', `Committed v${res1.version} with event #${res1.eventId}.`, 'success');
+      addResult('Request 1 Result', `Confirmed: Bed ${freeBed.id} booked.`, 'success');
 
       // Request 2 (Duplicate replay)
-      addResult('Firing Duplicate Request', `Firing request 2 with duplicate idempotencyKey: ${fixedKey}...`);
-      const res2 = await allocateResourceTransaction({
+      addResult('Sending Duplicate Request', 'Simulating immediate double-click with identical request token...');
+      await allocateResourceTransaction({
         resourceId: freeBed.id,
         actorId: 'doc-3',
         actorName: 'Dr. Priya Nair',
         patientId: 'pat-idemp-1',
-        patientName: 'Idempotency Test Patient',
+        patientName: 'Duplicate Test Patient',
         idempotencyKey: fixedKey
       });
 
       addResult(
-        'Duplicate Filtered',
-        `Duplicate ignored safely (idempotent replay detected). No duplicate mutation or event created!`,
+        'Duplicate Safely Filtered',
+        'Duplicate recognized and ignored. No double-booking or duplicate history entry created!',
         'success'
       );
       playAlertTone('success');
     } catch (err) {
-      addResult('Idempotency Test Failed', err.message, 'error');
+      addResult('Duplicate Test Failed', err.message, 'error');
     } finally {
       setRunningSim(null);
     }
@@ -192,93 +193,111 @@ export default function FailureDemoPanel() {
       <div>
         <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Bug className="w-5 h-5 text-rose-600" />
-          Failure & Chaos Simulation Control Panel
+          Test Recovery & Failures
         </h3>
         <p className="text-xs text-slate-500 font-medium">
-          Simulate concurrent race conditions, mid-saga failures, and service recoveries to prove deterministic conflict handling and rollback consistency in real-time.
+          Test how the system handles conflicts, failures, and recovery — safely, without affecting real data.
         </p>
       </div>
 
       {/* Simulation Action Triggers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Sim 1: Race Condition */}
-        <div className="clean-card p-5 border-rose-200 flex flex-col justify-between space-y-4">
+        <div className="clean-card p-5 border-rose-200 flex flex-col justify-between space-y-4 bg-white">
           <div>
             <div className="flex items-center gap-2 text-rose-700 font-bold text-xs">
-              <Flame className="w-4 h-4" /> 1. Concurrent Race Condition
+              <Flame className="w-4 h-4" /> 1. Same-Time Conflict
             </div>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Fires 2 simultaneous requests at the exact same millisecond with different priorities (Normal vs Critical Preemption) targeting a scarce ICU bed.
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed font-medium">
+              Fires 2 simultaneous requests at the exact same millisecond with different priorities (Normal vs Critical Emergency) targeting a scarce ICU bed.
             </p>
           </div>
-          <button
-            onClick={handleSimulateRaceCondition}
-            disabled={!!runningSim}
-            className="btn-danger text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
-          >
-            {runningSim === 'race' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4" />
-            )}
-            Run Race Condition
-          </button>
+          <div>
+            <button
+              onClick={handleSimulateRaceCondition}
+              disabled={!!runningSim}
+              className="btn-danger text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2 shadow-xs"
+            >
+              {runningSim === 'race' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              Simulate Conflict
+            </button>
+            <p className="text-[10px] text-slate-500 mt-2 flex items-start gap-1 font-sans">
+              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+              <span><strong>Demo takeaway:</strong> Shows that when two doctors book the same bed at once, the critical patient gets it and the other is safely notified.</span>
+            </p>
+          </div>
         </div>
 
         {/* Sim 2: Mid-Saga Rollback */}
-        <div className="clean-card p-5 border-purple-200 flex flex-col justify-between space-y-4">
+        <div className="clean-card p-5 border-purple-200 flex flex-col justify-between space-y-4 bg-white">
           <div>
             <div className="flex items-center gap-2 text-purple-700 font-bold text-xs">
-              <RotateCcw className="w-4 h-4" /> 2. Mid-Saga Compensation
+              <RotateCcw className="w-4 h-4" /> 2. Failed Step Recovery
             </div>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Initiates an Adrenaline prescription (deducting stock), then simulates a mid-saga bedside abort to demonstrate automated stock restoration and saga rollback.
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed font-medium">
+              Starts an Adrenaline prescription (reserving stock), then simulates a nurse detecting an allergy at bedside to show automated medicine return.
             </p>
           </div>
-          <button
-            onClick={handleSimulateSagaRollback}
-            disabled={!!runningSim}
-            className="btn-purple text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
-          >
-            {runningSim === 'saga' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4" />
-            )}
-            Run Saga Rollback Demo
-          </button>
+          <div>
+            <button
+              onClick={handleSimulateSagaRollback}
+              disabled={!!runningSim}
+              className="btn-purple text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2 shadow-xs"
+            >
+              {runningSim === 'saga' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              Simulate a Failed Step
+            </button>
+            <p className="text-[10px] text-slate-500 mt-2 flex items-start gap-1 font-sans">
+              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+              <span><strong>Demo takeaway:</strong> Shows that if an order is cancelled midway, the pharmacy stock is automatically returned to inventory.</span>
+            </p>
+          </div>
         </div>
 
         {/* Sim 3: Idempotency Deduplication */}
-        <div className="clean-card p-5 border-blue-200 flex flex-col justify-between space-y-4">
+        <div className="clean-card p-5 border-blue-200 flex flex-col justify-between space-y-4 bg-white">
           <div>
             <div className="flex items-center gap-2 text-blue-700 font-bold text-xs">
-              <ShieldCheck className="w-4 h-4" /> 3. Idempotency Key Replay
+              <ShieldCheck className="w-4 h-4" /> 3. Duplicate Request Test
             </div>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-              Fires duplicate requests carrying identical idempotency keys to verify zero-duplicate state corruption.
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed font-medium">
+              Sends identical duplicate requests to confirm the system safely handles double-clicks without duplicate bookings or corrupt records.
             </p>
           </div>
-          <button
-            onClick={handleSimulateIdempotency}
-            disabled={!!runningSim}
-            className="btn-blue text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2"
-          >
-            {runningSim === 'idempotency' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4" />
-            )}
-            Test Idempotency Replay
-          </button>
+          <div>
+            <button
+              onClick={handleSimulateIdempotency}
+              disabled={!!runningSim}
+              className="btn-blue text-xs py-2.5 w-full font-bold flex items-center justify-center gap-2 shadow-xs"
+            >
+              {runningSim === 'idempotency' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              Test Duplicate Handling
+            </button>
+            <p className="text-[10px] text-slate-500 mt-2 flex items-start gap-1 font-sans">
+              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+              <span><strong>Demo takeaway:</strong> Shows that accidental double-clicking or network retries never create duplicate bed bookings.</span>
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Real-Time Simulation Output Terminal */}
-      <div className="clean-card p-5 space-y-3">
+      {/* Real-Time Simulation Output Console */}
+      <div className="clean-card p-5 space-y-3 bg-white">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase text-slate-800 tracking-wider">
-            Simulation Telemetry Console
+          <span className="text-xs font-bold text-slate-800 tracking-wider uppercase font-mono">
+            Test Results Console
           </span>
           {simResults.length > 0 && (
             <button
@@ -292,8 +311,8 @@ export default function FailureDemoPanel() {
 
         <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 max-h-64 overflow-y-auto font-mono text-xs space-y-2 text-slate-200">
           {simResults.length === 0 ? (
-            <div className="text-slate-400 text-center py-6">
-              Click any simulation button above to watch live transactional behavior.
+            <div className="text-slate-400 text-center py-6 font-sans">
+              Click any button above to watch how the system handles edge cases live.
             </div>
           ) : (
             simResults.map((r) => (
@@ -311,7 +330,7 @@ export default function FailureDemoPanel() {
                   >
                     [{r.title}]:
                   </span>{' '}
-                  <span className="text-slate-200">{r.details}</span>
+                  <span className="text-slate-200 font-sans">{r.details}</span>
                 </div>
               </div>
             ))

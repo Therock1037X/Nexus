@@ -52,11 +52,11 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'grid', label: 'Live Grid', icon: Building2, badge: `${stats.totalBeds} Units` },
-    { id: 'conflicts', label: 'Conflict Feed', icon: GitMerge, badge: stats.conflictsCount, badgeColor: stats.conflictsCount > 0 ? 'bg-rose-50 text-rose-800' : 'bg-slate-300/60 text-slate-700' },
-    { id: 'sagas', label: 'Saga Tracker', icon: GitPullRequest, badge: stats.inProgressSagasCount, badgeColor: stats.inProgressSagasCount > 0 ? 'bg-purple-50 text-purple-800' : 'bg-slate-300/60 text-slate-700' },
-    { id: 'audit', label: 'Audit Trail', icon: History, badge: 'AI' },
+    { id: 'conflicts', label: 'Conflict History', icon: GitMerge, badge: stats.conflictsCount, badgeColor: stats.conflictsCount > 0 ? 'bg-rose-50 text-rose-800' : 'bg-slate-300/60 text-slate-700' },
+    { id: 'sagas', label: 'Prescription Tracker', icon: GitPullRequest, badge: stats.inProgressSagasCount, badgeColor: stats.inProgressSagasCount > 0 ? 'bg-purple-50 text-purple-800' : 'bg-slate-300/60 text-slate-700' },
+    { id: 'audit', label: 'Activity History', icon: History, badge: 'AI' },
     { id: 'setup', label: 'Resource Setup', icon: PlusCircle },
-    { id: 'demo', label: 'Failure Demo', icon: Bug, badge: 'Chaos', badgeColor: 'bg-rose-50 text-rose-800' },
+    { id: 'demo', label: 'Test Recovery', icon: Bug },
     { id: 'pharmacy', label: 'Pharmacy Queue', icon: PackageCheck, badge: incomingPrescriptions.length, badgeColor: incomingPrescriptions.length > 0 ? 'bg-purple-50 text-purple-800' : 'bg-slate-300/60 text-slate-700' }
   ];
 
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
               {stats.conflictsCount}
             </div>
             <div className="text-xs text-slate-500 font-medium mt-1">
-              • Emergency preemption logged
+              • Emergency overrides logged
             </div>
           </div>
         </div>

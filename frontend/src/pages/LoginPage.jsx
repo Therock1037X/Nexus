@@ -71,13 +71,13 @@ export default function LoginPage() {
                 NEXUS
               </h1>
               <p className="text-xs text-emerald-800 font-bold uppercase tracking-wider">
-                Clinical Resource Coordination & Concurrency System
+                Real-Time Hospital Resource & Patient Care System
               </p>
             </div>
           </div>
 
           <p className="text-sm text-slate-600 leading-relaxed font-medium">
-            Real-time hospital operations with <strong className="text-slate-900">Optimistic Concurrency Control (OCC)</strong>, deterministic preemption tiebreakers, 3-step distributed <strong className="text-slate-900">Prescription Sagas</strong> with automated rollback compensation, and <strong className="text-slate-900">Gemini AI medical intelligence</strong>.
+            Real-time hospital operations with instant bed & equipment coordination, 3-step prescription tracking with automated stock returns, and Google Gemini AI assistance.
           </p>
 
           {/* 1-Click Quick Personas (Hackathon Fast-Access) */}

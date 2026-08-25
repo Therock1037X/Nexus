@@ -172,12 +172,12 @@ export async function allocateResourceTransaction({
         if (newScore > existingScore) {
           canProceed = true;
           isPreemption = true;
-          conflictReason = `Priority Escalation Preemption: Incoming ${priority.toUpperCase()} (tier ${newScore}) overrides existing ${currentAlloc?.priority?.toUpperCase() || 'NORMAL'} (tier ${existingScore}).`;
+          conflictReason = `Emergency Priority Override: Incoming ${priority.toUpperCase()} request prioritized over existing ${currentAlloc?.priority?.toUpperCase() || 'NORMAL'} hold.`;
         } else {
           canProceed = false;
           conflictReason = newScore === existingScore
-            ? `Deterministic Conflict: Resource is held by existing reservation at same priority tier (${currentAlloc?.priority || 'normal'}). First-come, first-served applied.`
-            : `Deterministic Conflict: Requested priority (${priority}) is lower than existing hold (${currentAlloc?.priority || 'high'}). Request rejected.`;
+            ? `Not available: This bed was already booked by another request at the same priority level.`
+            : `Not available: This bed is currently assigned to a higher-urgency emergency patient.`;
         }
       }
 
@@ -313,10 +313,10 @@ export async function allocateResourceTransaction({
       } else if (newScore > existingScore) {
         canProceed = true;
         isPreemption = true;
-        conflictReason = `Priority Escalation Preemption: Incoming ${priority.toUpperCase()} overrides existing hold.`;
+        conflictReason = `Emergency Priority Override: Incoming ${priority.toUpperCase()} request prioritized over existing hold.`;
       } else {
         canProceed = false;
-        conflictReason = `Deterministic Conflict: Resource is held by existing hold at ${currentAlloc?.priority || 'high'} priority.`;
+        conflictReason = `Not available: This bed is held by another patient with equal or higher urgency.`;
       }
 
       if (!canProceed) {

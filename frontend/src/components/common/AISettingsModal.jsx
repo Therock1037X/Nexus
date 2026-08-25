@@ -48,8 +48,8 @@ export default function AISettingsModal({ isOpen, onClose }) {
             <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
               <Shield className="w-3.5 h-3.5" /> Explainable Medical AI Policy
             </div>
-            <p className="text-slate-600 text-[11px] leading-relaxed">
-              AI provides advisory assistance (Audit narratives, Natural Language request parsing, Urgency classification, Availability forecasts). The core deterministic conflict engine always enforces final resource truth.
+            <p className="text-slate-600 text-[11px] leading-relaxed font-medium">
+              AI provides advisory assistance (Activity summaries, Request parsing, Urgency classification, Bed availability estimates). Doctors and hospital staff always make the final decision.
             </p>
           </div>
 

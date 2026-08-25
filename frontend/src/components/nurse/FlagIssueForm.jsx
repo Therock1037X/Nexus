@@ -10,7 +10,7 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
 
   const [resourceId, setResourceId] = useState(preselectedResource?.id || resources[0]?.id || '');
   const [issueType, setIssueType] = useState('cleaning');
-  const [notes, setNotes] = useState('Terminal post-discharge disinfection required.');
+  const [notes, setNotes] = useState('Post-discharge deep cleaning and sanitization needed.');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
@@ -34,12 +34,12 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
       playAlertTone('success');
       setFeedback({
         type: 'success',
-        message: `Resource ${resourceId} status updated to ${issueType.toUpperCase()} (v${result.version}).`
+        message: `${resourceId} has been marked as ${issueType === 'cleaning' ? 'Needs Cleaning' : 'Needs Maintenance'}.`
       });
 
       if (onSuccess) onSuccess(result);
     } catch (err) {
-      setFeedback({ type: 'error', message: `Failed to flag issue: ${err.message}` });
+      setFeedback({ type: 'error', message: `Failed to update status: ${err.message}` });
     } finally {
       setSubmitting(false);
     }
@@ -48,7 +48,7 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Target Hospital Resource</label>
+        <label className="block text-slate-700 font-semibold mb-1">Target Bed or Equipment</label>
         <select
           value={resourceId}
           onChange={(e) => setResourceId(e.target.value)}
@@ -56,31 +56,31 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
         >
           {resources.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.id} ({r.name || r.type}) • Status: {r.status.toUpperCase()} (v{r.version || 1})
+              {r.id} ({r.name || r.type}) • Current Status: {r.status.toUpperCase()}
             </option>
           ))}
         </select>
       </div>
 
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Issue Classification</label>
+        <label className="block text-slate-700 font-semibold mb-1">What is needed?</label>
         <select
           value={issueType}
           onChange={(e) => setIssueType(e.target.value)}
           className="clean-input w-full font-medium"
         >
-          <option value="cleaning">Sanitization / Cleaning Protocol Required</option>
-          <option value="maintenance">Biomedical Maintenance / Calibration Required</option>
+          <option value="cleaning">Needs Cleaning & Disinfection</option>
+          <option value="maintenance">Needs Repair / Calibration</option>
         </select>
       </div>
 
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Clinical / Engineering Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Details / Notes</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Spillage cleaned; deep disinfection required before next admission..."
+          placeholder="e.g. Bed needs clean linens and surface disinfection before next admission..."
           className="clean-input w-full"
         />
       </div>
@@ -105,11 +105,11 @@ export default function FlagIssueForm({ preselectedResource = null, onSuccess = 
       >
         {submitting ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Updating Resource Status...
+            <Loader2 className="w-4 h-4 animate-spin" /> Saving...
           </>
         ) : (
           <>
-            <AlertTriangle className="w-4 h-4" /> Flag Resource Status
+            <AlertTriangle className="w-4 h-4" /> Save Problem Report
           </>
         )}
       </button>

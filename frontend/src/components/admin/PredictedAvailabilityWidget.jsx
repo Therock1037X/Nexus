@@ -31,12 +31,12 @@ export default function PredictedAvailabilityWidget() {
           </div>
           <div>
             <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              Predictive Resource Availability & Demand Forecast
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                AI ADVISORY
+              Expected Bed Availability
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Estimate only
               </span>
             </h4>
-            <p className="text-xs text-slate-500 font-medium">1-2 Hour Advisory Turnover & Bed Release Projections</p>
+            <p className="text-xs text-slate-500 font-medium">Turnover and bed release projections for the next 1-2 hours</p>
           </div>
         </div>
 
@@ -44,7 +44,7 @@ export default function PredictedAvailabilityWidget() {
           onClick={fetchForecast}
           disabled={loading}
           className="p-2 rounded-xl text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors border border-slate-200"
-          title="Refresh AI Forecast"
+          title="Refresh Forecast"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
         </button>
@@ -72,21 +72,21 @@ export default function PredictedAvailabilityWidget() {
               <div className="text-xl font-extrabold text-blue-700 mt-1">
                 ~{forecast.projectedOtTurnoverMinutes || 30} mins
               </div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5">OT-2 Cardiac procedure wrap</div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Cardiac OT wrap & clean</div>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Surge Bottleneck</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Capacity Status</div>
               <div
                 className={`text-xl font-extrabold mt-1 ${
                   forecast.bottleneckRiskLevel === 'HIGH' || forecast.bottleneckRiskLevel === 'CRITICAL'
                     ? 'text-rose-700'
-                    : 'text-amber-700'
+                    : 'text-emerald-700'
                 }`}
               >
-                {forecast.bottleneckRiskLevel || 'MODERATE'}
+                {forecast.bottleneckRiskLevel || 'NORMAL'}
               </div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Capacity Risk Tier</div>
+              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Hospital Load</div>
             </div>
           </div>
 
@@ -95,7 +95,7 @@ export default function PredictedAvailabilityWidget() {
             <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-slate-800 flex items-start gap-2.5">
               <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-emerald-900">Operational Recommendation: </span>
+                <span className="font-bold text-emerald-900">Recommendation: </span>
                 <span className="text-slate-700 font-medium">{forecast.recommendedAction}</span>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function PredictedAvailabilityWidget() {
       ) : (
         <div className="p-6 text-center text-slate-500 text-xs">
           <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
-          Calculating predictive capacity model...
+          Calculating expected capacity...
         </div>
       )}
     </div>

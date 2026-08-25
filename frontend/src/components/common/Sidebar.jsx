@@ -30,25 +30,19 @@ export default function Sidebar({ isOpen, onClose }) {
       to: '/doctor/dashboard',
       label: 'Doctor Dashboard',
       subtitle: 'Patients, Prescriptions & Requests',
-      icon: Stethoscope,
-      badge: stats.occupiedBeds > 0 ? `${stats.occupiedBeds} Beds` : null,
-      badgeColor: 'bg-[#173829] text-emerald-300 border border-emerald-700/50'
+      icon: Stethoscope
     },
     {
       to: '/nurse/dashboard',
       label: 'Nurse Dashboard',
-      subtitle: 'Task Queue, Vitals & Sanitization',
-      icon: Heart,
-      badge: stats.inProgressSagasCount > 0 ? `${stats.inProgressSagasCount} Tasks` : null,
-      badgeColor: 'bg-blue-950/60 text-blue-300 border border-blue-700/50'
+      subtitle: 'Task Queue, Vitals & Care',
+      icon: Heart
     },
     {
       to: '/admin/dashboard',
       label: 'Admin Dashboard',
-      subtitle: 'Operations, OCC, Sagas & Pharmacy',
-      icon: Shield,
-      badge: stats.conflictsCount > 0 ? `${stats.conflictsCount} Conflicts` : 'Active',
-      badgeColor: stats.conflictsCount > 0 ? 'bg-rose-950/60 text-rose-300 border border-rose-700/50' : 'bg-[#173829] text-emerald-300 border border-emerald-700/50'
+      subtitle: 'Operations, Audits & Pharmacy',
+      icon: Shield
     }
   ];
 
@@ -79,7 +73,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   Nexus
                 </h1>
                 <p className="text-[11px] text-emerald-400/90 font-medium">
-                  Clinical Concurrency OS
+                  Hospital Operations
                 </p>
               </div>
             </div>
@@ -120,13 +114,6 @@ export default function Sidebar({ isOpen, onClose }) {
                       <div className="text-[10px] text-emerald-400/70 font-normal truncate mt-0.5">{item.subtitle}</div>
                     </div>
                   </div>
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md flex-shrink-0 ml-1 ${item.badgeColor}`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
                 </NavLink>
               );
             })}

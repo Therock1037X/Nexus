@@ -18,7 +18,7 @@ export default function LogEventForm({ onSuccess = null }) {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const selectedPatient = patients.find(p => p.patientId === patientId);
+  const selectedPatient = patients.find(p => p.patientId === patientId) || patients[0];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +38,7 @@ export default function LogEventForm({ onSuccess = null }) {
       resultingVersion: 1,
       payload: {
         eventType,
-        patientId,
+        patientId: selectedPatient?.patientId || patientId,
         patientName: selectedPatient?.name || 'Patient',
         notes,
         vitals: { hr, bp, spo2, temp }
@@ -57,10 +57,10 @@ export default function LogEventForm({ onSuccess = null }) {
       window.dispatchEvent(new CustomEvent('nexus_store_updated', { detail: { key: 'nexus_local_events' } }));
 
       playAlertTone('success');
-      setFeedback({ type: 'success', message: 'Clinical event successfully appended to immutable audit log!' });
+      setFeedback({ type: 'success', message: 'Vitals and care update saved successfully!' });
       if (onSuccess) onSuccess(newEvent);
     } catch (err) {
-      setFeedback({ type: 'error', message: `Failed to log event: ${err.message}` });
+      setFeedback({ type: 'error', message: `Failed to save update: ${err.message}` });
     } finally {
       setSubmitting(false);
     }
@@ -72,13 +72,13 @@ export default function LogEventForm({ onSuccess = null }) {
       <div>
         <label className="block text-slate-700 font-semibold mb-1">Select Patient</label>
         <select
-          value={patientId}
+          value={patientId || selectedPatient?.patientId}
           onChange={(e) => setPatientId(e.target.value)}
           className="clean-input w-full font-medium"
         >
           {patients.map((p) => (
             <option key={p.patientId} value={p.patientId}>
-              {p.name} ({p.patientId}) • Bed: {p.currentBedId || 'N/A'} • {p.diagnosis}
+              {p.name} ({p.patientId}) • Bed: {p.currentBedId || 'General Ward'} • Doctor: {p.assignedDoctorName || 'Dr. Ananya Sharma'}
             </option>
           ))}
         </select>
@@ -86,27 +86,27 @@ export default function LogEventForm({ onSuccess = null }) {
 
       {/* Event Category */}
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Clinical Action Type</label>
+        <label className="block text-slate-700 font-semibold mb-1">Type of Care</label>
         <select
           value={eventType}
           onChange={(e) => setEventType(e.target.value)}
           className="clean-input w-full font-medium"
         >
-          <option value="vitals_recorded">Vitals & Hemodynamic Check</option>
-          <option value="medicine_administered">Bedside Medication Administered</option>
+          <option value="vitals_recorded">Vitals Check</option>
+          <option value="medicine_administered">Medication Given</option>
           <option value="urine_bag_changed">Urine Bag / Catheter Changed</option>
           <option value="wound_dressing">Wound Dressing / Inspection</option>
-          <option value="iv_line_flushed">IV Line Flushed & Patency Verified</option>
-          <option value="patient_turned">Patient Turned / Repositioned</option>
+          <option value="iv_line_flushed">IV Line Checked & Flushed</option>
+          <option value="patient_turned">Patient Repositioned</option>
         </select>
       </div>
 
-      {/* Vitals Telemetry Inputs */}
+      {/* Vitals Inputs */}
       <div>
-        <label className="block text-slate-700 font-semibold mb-1.5">Bedside Vitals</label>
+        <label className="block text-slate-700 font-semibold mb-1.5">Current Vitals</label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">HR (bpm)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Heart Rate (bpm)</span>
             <input
               type="number"
               value={hr}
@@ -115,7 +115,7 @@ export default function LogEventForm({ onSuccess = null }) {
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">BP (mmHg)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Blood Pressure</span>
             <input
               type="text"
               value={bp}
@@ -124,7 +124,7 @@ export default function LogEventForm({ onSuccess = null }) {
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">SpO2 (%)</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Oxygen SpO2 (%)</span>
             <input
               type="number"
               value={spo2}
@@ -133,7 +133,7 @@ export default function LogEventForm({ onSuccess = null }) {
             />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">Temp</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">Temperature</span>
             <input
               type="text"
               value={temp}
@@ -144,13 +144,14 @@ export default function LogEventForm({ onSuccess = null }) {
         </div>
       </div>
 
-      {/* Clinical Notes */}
+      {/* Observation Notes */}
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Clinical Observation Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Notes & Observations</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          placeholder="e.g. Patient is resting comfortably, vitals stable..."
           className="clean-input w-full text-xs"
         />
       </div>
@@ -177,11 +178,11 @@ export default function LogEventForm({ onSuccess = null }) {
       >
         {submitting ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Appending to Event Stream...
+            <Loader2 className="w-4 h-4 animate-spin" /> Saving Update...
           </>
         ) : (
           <>
-            <HeartPulse className="w-4 h-4" /> Commit Clinical Event to Audit Log
+            <HeartPulse className="w-4 h-4" /> Save This Update
           </>
         )}
       </button>

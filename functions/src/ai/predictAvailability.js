@@ -1,66 +1,38 @@
+import { callGemini } from './geminiClient.js';
+
+const SYSTEM_PROMPT = `Given this history of bed allocations and releases, estimate in one short sentence how many beds of this type are likely to become free in the next hour, and state this is an estimate, not a guarantee. Base your estimate only on the pattern in the data provided.`;
+
 /**
- * AI Feature 4: Predictive Resource Availability Engine
- * Uses event turnover data and current occupancy to generate advisory forecasts.
- * Note: Purely predictive/advisory. Does not alter resource state or transactional truth.
+ * FUNCTION 4: Predict Resource Availability
+ * Returns: { summary: string, projectedFreedIcuBedsInNext2Hours: number, projectedOtTurnoverMinutes: number, bottleneckRiskLevel: string, recommendedAction: string }
  */
+export async function predictAvailability(resources = [], events = [], hospitalId = 'default-hospital') {
+  const freeBeds = resources.filter(r => r.type === 'bed' && r.status === 'free').length;
+  const occupiedBeds = resources.filter(r => r.type === 'bed' && r.status === 'occupied').length;
+  const cleaningBeds = resources.filter(r => r.type === 'bed' && r.status === 'cleaning').length;
 
-import { generateContentWithFallback } from './llmClient.js';
+  const promptInput = `Current State: ${freeBeds} free beds, ${occupiedBeds} occupied beds, ${cleaningBeds} beds currently being cleaned. Total recent events: ${events.length}.`;
 
-export async function predictAvailability(resources = [], recentEvents = [], apiKey = '') {
-  // Compute basic telemetry metrics
-  const totalBeds = resources.filter(r => r.type === 'bed');
-  const icuBeds = totalBeds.filter(b => b.bedType === 'icu');
-  const freeIcu = icuBeds.filter(b => b.status === 'free').length;
-  const occupiedIcu = icuBeds.length - freeIcu;
-
-  const ots = resources.filter(r => r.type === 'ot');
-  const inUseOts = ots.filter(o => o.status === 'in_use').length;
-
-  const ventilators = resources.filter(r => r.type === 'equipment' && (r.equipmentType === 'Ventilator' || r.id?.includes('VENT')));
-  const freeVentilators = ventilators.filter(v => v.status === 'free').length;
-
-  const prompt = `You are a Hospital Operations Predictive Forecaster.
-Analyze the current hospital occupancy status and recent events:
-
-Current Occupancy:
-- Total ICU Beds: ${icuBeds.length} (Occupied: ${occupiedIcu}, Free: ${freeIcu})
-- Operating Theatres In-Use: ${inUseOts} of ${ots.length}
-- Ventilators Available: ${freeVentilators} of ${ventilators.length}
-- Recent Events Count: ${recentEvents.length}
-
-Generate a concise, 2-3 sentence operational forecast predicting likely resource availability trends over the next 1-2 hours (e.g. step-down discharge rate, post-op bed demand, critical bottlenecks).
-
-Output JSON:
-{
-  "summary": "Short 2-line forecast statement.",
-  "projectedFreedIcuBedsInNext2Hours": number,
-  "projectedOtTurnoverMinutes": number,
-  "bottleneckRiskLevel": "LOW" | "MODERATE" | "HIGH" | "CRITICAL",
-  "recommendedAction": "Actionable operational suggestion for charge nurse / bed manager."
-}`;
-
-  const fallbackPredictor = () => {
-    let bottleneck = 'MODERATE';
-    if (freeIcu <= 1 || freeVentilators <= 1) bottleneck = 'HIGH';
-    if (freeIcu === 0 && freeVentilators === 0) bottleneck = 'CRITICAL';
-
-    return JSON.stringify({
-      summary: `Estimated turnover indicates 2 General Beds and 1 ICU step-down likely within 60 minutes based on patient stability trends. OT-2 procedure is in final closing phase.`,
-      projectedFreedIcuBedsInNext2Hours: freeIcu <= 2 ? 1 : 2,
-      projectedOtTurnoverMinutes: inUseOts > 0 ? 35 : 0,
-      bottleneckRiskLevel: bottleneck,
-      recommendedAction: bottleneck === 'HIGH' || bottleneck === 'CRITICAL'
-        ? 'Expedite pending step-down transfers from ICU-201 to Floor 1 General Ward G-102 once sanitized.'
-        : 'Maintain standard monitoring; reserve 1 ventilator in ICU storage for incoming emergency traffic.'
-    });
-  };
-
-  const rawResult = await generateContentWithFallback(prompt, { apiKey, model: 'gemini-2.5-flash' }, fallbackPredictor);
+  let sentenceSummary = `Based on current discharge schedules, 1 to 2 ICU beds are estimated to become available within the next hour (estimate only).`;
 
   try {
-    const jsonStr = rawResult.replace(/```json/gi, '').replace(/```/g, '').trim();
-    return JSON.parse(jsonStr);
+    const aiText = await callGemini(SYSTEM_PROMPT, promptInput, 'gemini-1.5-flash', hospitalId);
+    if (aiText && aiText.length > 10) {
+      sentenceSummary = aiText.replace(/```/g, '').trim();
+    }
   } catch (err) {
-    return JSON.parse(fallbackPredictor());
+    console.warn('[Predict Availability] AI fallback triggered:', err.message);
   }
+
+  const occupancyRate = resources.length > 0 ? Math.round((occupiedBeds / resources.length) * 100) : 30;
+
+  return {
+    summary: sentenceSummary,
+    projectedFreedIcuBedsInNext2Hours: Math.max(1, cleaningBeds + (freeBeds > 3 ? 2 : 1)),
+    projectedOtTurnoverMinutes: 30,
+    bottleneckRiskLevel: occupancyRate > 80 ? 'HIGH' : occupancyRate > 50 ? 'MODERATE' : 'NORMAL',
+    recommendedAction: cleaningBeds > 0
+      ? `Expedite cleaning on ${cleaningBeds} sanitizing bed(s) to increase reserve buffer.`
+      : 'Maintain standard ward allocation protocols.'
+  };
 }

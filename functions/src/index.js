@@ -27,10 +27,10 @@ import {
 } from './sagas/prescriptionSaga.js';
 import { executeTransferSaga } from './sagas/transferSaga.js';
 
-// Import AI
-import { explainAuditTrail } from './ai/explainAuditTrail.js';
-import { suggestEscalationPriority } from './ai/suggestEscalationPriority.js';
-import { parseResourceRequest } from './ai/parseResourceRequest.js';
+// Import AI Functions
+import { explainActivity } from './ai/explainActivity.js';
+import { suggestUrgency } from './ai/suggestUrgency.js';
+import { parseRequest } from './ai/parseRequest.js';
 import { predictAvailability } from './ai/predictAvailability.js';
 
 // ==========================================
@@ -74,31 +74,31 @@ export const compensatePrescriptionCall = onCall(async (request) => {
 });
 
 // AI Callables
-export const generateAuditExplanationCall = onCall(async (request) => {
-  const { events, apiKey } = request.data;
-  return await explainAuditTrail(events, apiKey);
+export const explainActivityCall = onCall(async (request) => {
+  const { events, hospitalId = 'default-hospital' } = request.data;
+  return await explainActivity(events, hospitalId);
 });
 
-export const suggestPriorityCall = onCall(async (request) => {
-  const { clinicalReason, apiKey } = request.data;
-  return await suggestEscalationPriority(clinicalReason, apiKey);
+export const suggestUrgencyCall = onCall(async (request) => {
+  const { clinicalReason, hospitalId = 'default-hospital' } = request.data;
+  return await suggestUrgency(clinicalReason, hospitalId);
 });
 
 export const parseRequestCall = onCall(async (request) => {
-  const { naturalText, apiKey } = request.data;
-  return await parseResourceRequest(naturalText, apiKey);
+  const { naturalText, hospitalId = 'default-hospital' } = request.data;
+  return await parseRequest(naturalText, hospitalId);
 });
 
 export const predictAvailabilityCall = onCall(async (request) => {
-  const { resources, recentEvents, apiKey } = request.data;
-  return await predictAvailability(resources, recentEvents, apiKey);
+  const { resources, events, hospitalId = 'default-hospital' } = request.data;
+  return await predictAvailability(resources, events, hospitalId);
 });
 
 // Health check endpoint
 export const health = onRequest((req, res) => {
   res.json({
     status: 'ONLINE',
-    system: 'NEXUS Clinical Resource Transaction System',
+    system: 'NEXUS Hospital Operations Engine',
     timestamp: new Date().toISOString()
   });
 });

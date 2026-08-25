@@ -451,12 +451,12 @@ app.post('/api/transactions/allocate', (req, res) => {
     if (incomingScore > existingScore) {
       canProceed = true;
       isPreemption = true;
-      conflictReason = `Priority Escalation: Incoming ${priority.toUpperCase()} (tier ${incomingScore}) overrides existing ${currentAlloc?.priority?.toUpperCase() || 'NORMAL'} (tier ${existingScore}).`;
+      conflictReason = `Emergency Priority Override: Incoming ${priority.toUpperCase()} request prioritized over existing ${currentAlloc?.priority?.toUpperCase() || 'NORMAL'} hold.`;
     } else {
       canProceed = false;
       conflictReason = incomingScore === existingScore
-        ? `Deterministic Conflict: Resource is held by existing booking at the same urgency level (${currentAlloc?.priority || 'normal'}). First-come, first-served applied.`
-        : `Deterministic Conflict: Requested urgency (${priority}) is lower than existing hold (${currentAlloc?.priority || 'high'}). Request rejected.`;
+        ? `Not available: This bed was already booked by another request at the same urgency level.`
+        : `Not available: This bed is currently assigned to a higher-urgency emergency patient.`;
     }
   }
 
@@ -1140,10 +1140,10 @@ app.post('/api/ai/explain', async (req, res) => {
   const preempts = events.filter(e => e.type === 'escalation_preemption').length;
   const sagas = events.filter(e => e.type === 'clinical_event' && e.payload?.action?.includes('PRESCRIPTION')).length;
 
-  const narrative = `In this session, clinical staff processed ${events.length} hospital operations across wards. ` +
-    `A total of ${allocs} beds/resources were allocated, and ${cancels} resources were discharged or transitioned to cleaning. ` +
-    (preempts > 0 ? `Crucially, ${preempts} emergency priority overrides were deterministically executed, seamlessly redirecting critical beds to life-threatening cases while notifying attending physicians. ` : `All resource requests were resolved without contention. `) +
-    (sagas > 0 ? `${sagas} multi-step prescriptions were routed through the Central Pharmacy with real-time stock deductions.` : '');
+  const narrative = `In this session, hospital staff completed ${events.length} care and bed updates across the hospital. ` +
+    `A total of ${allocs} beds and resources were assigned, and ${cancels} were discharged or sent for cleaning. ` +
+    (preempts > 0 ? `Additionally, ${preempts} emergency priority overrides took place, safely giving critical beds to the most urgent patients while notifying staff. ` : `All bed and equipment requests were handled smoothly. `) +
+    (sagas > 0 ? `${sagas} prescriptions were tracked through the pharmacy with inventory updated automatically.` : '');
 
   res.json({ summary: narrative });
 });

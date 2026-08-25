@@ -19,6 +19,13 @@ export default function SagaTracker() {
     return s.status === filter;
   });
 
+  const filterLabels = {
+    all: 'All Orders',
+    in_progress: 'In Progress',
+    completed: 'Delivered',
+    compensated: 'Cancelled & Returned'
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -26,10 +33,10 @@ export default function SagaTracker() {
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <GitPullRequest className="w-5 h-5 text-purple-700" />
-            Multi-Step Clinical Saga Tracker
+            Prescription Progress Tracker
           </h3>
           <p className="text-xs text-slate-500 font-medium">
-            Monitors multi-step distributed workflows (Doctor Order → Pharmacy Dispense → Nurse Administer) with automated compensation rollbacks.
+            Tracks each prescription from doctor's order, to pharmacy, to the nurse giving it — and safely undoes it if a step fails.
           </p>
         </div>
 
@@ -38,13 +45,13 @@ export default function SagaTracker() {
             <button
               key={st}
               onClick={() => setFilter(st)}
-              className={`px-3 py-1.5 rounded-lg capitalize transition-all ${
+              className={`px-3 py-1.5 rounded-lg transition-all ${
                 filter === st
                   ? 'bg-white text-slate-900 shadow-sm font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {st.replace('_', ' ')} ({sagas.filter(s => st === 'all' || s.status === st).length})
+              {filterLabels[st]} ({sagas.filter(s => st === 'all' || s.status === st).length})
             </button>
           ))}
         </div>
@@ -52,9 +59,9 @@ export default function SagaTracker() {
 
       {/* Sagas List */}
       {filtered.length === 0 ? (
-        <div className="clean-card p-12 text-center text-slate-500">
+        <div className="clean-card p-12 text-center text-slate-500 bg-white">
           <GitPullRequest className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-          <p className="text-sm font-bold text-slate-800">No sagas found for filter: {filter}</p>
+          <p className="text-sm font-bold text-slate-800">No prescriptions found in this view.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -65,12 +72,12 @@ export default function SagaTracker() {
             return (
               <div
                 key={saga.id}
-                className={`clean-card p-5 border transition-all ${
+                className={`clean-card p-5 border transition-all bg-white ${
                   isCompensated
-                    ? 'border-purple-200 bg-purple-50/20'
+                    ? 'border-purple-200'
                     : isCompleted
-                    ? 'border-emerald-200 bg-emerald-50/20'
-                    : 'border-slate-200 bg-white'
+                    ? 'border-emerald-200'
+                    : 'border-slate-200'
                 }`}
               >
                 {/* Header */}
@@ -104,7 +111,7 @@ export default function SagaTracker() {
                   </div>
                 </div>
 
-                {/* Multi-Step Pipeline Visualizer */}
+                {/* 3-Step Pipeline Visualizer */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-3">
                   {saga.steps?.map((step, idx) => {
                     const isDone = step.status === 'done';
@@ -121,46 +128,46 @@ export default function SagaTracker() {
                             : 'bg-slate-50 border-slate-200 text-slate-600'
                         }`}
                       >
-                        <div className="flex items-center justify-between font-mono text-[11px] mb-1 font-semibold">
-                          <span>
+                        <div className="flex items-center justify-between text-xs mb-1 font-semibold">
+                          <span className="font-bold text-slate-800">
                             {idx + 1}. {step.label || step.stepName}
                           </span>
                           <span>
                             {isStepComp ? (
                               <span className="text-purple-700 font-bold flex items-center gap-1">
-                                <RotateCcw className="w-3 h-3" /> REVERTED
+                                <RotateCcw className="w-3 h-3" /> Returned
                               </span>
                             ) : isDone ? (
                               <span className="text-emerald-700 font-bold flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> DONE
+                                <CheckCircle2 className="w-3 h-3" /> Done
                               </span>
                             ) : (
                               <span className="text-amber-700 font-bold flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> QUEUED
+                                <Clock className="w-3 h-3" /> Waiting
                               </span>
                             )}
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-500 truncate font-medium">
-                          {step.details || (isDone ? `Executed by ${step.actorName}` : 'Awaiting action')}
+                        <div className="text-[11px] text-slate-500 truncate font-medium mt-1">
+                          {step.details || (isDone ? `Completed by ${step.actorName}` : 'Waiting for next action')}
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Compensation Details Drawer (if Compensated) */}
+                {/* Compensation Details Drawer */}
                 {isCompensated && saga.compensationDetails && (
-                  <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 font-mono space-y-1.5">
+                  <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-purple-900">
-                      <ShieldCheck className="w-4 h-4 text-purple-700" /> Automated Compensation Rollback Executed
+                      <ShieldCheck className="w-4 h-4 text-purple-700" /> Prescription Safely Cancelled & Returned to Stock
                     </div>
                     <p className="text-[11px] text-purple-800 font-medium">
                       Reason: "{saga.compensationDetails.reason}"
                     </p>
                     <div className="flex items-center justify-between text-[10px] text-purple-700 pt-1.5 border-t border-purple-200 font-semibold">
-                      <span>Restored: +{saga.compensationDetails.stockRefunded} units to inventory</span>
-                      <span>Actor: {saga.compensationDetails.actorName} ({saga.compensationDetails.actorRole})</span>
+                      <span>Restored: +{saga.compensationDetails.stockRefunded} units back to pharmacy inventory</span>
+                      <span>Handled by: {saga.compensationDetails.actorName} ({saga.compensationDetails.actorRole})</span>
                     </div>
                   </div>
                 )}
