@@ -9,6 +9,8 @@ firestore-debug.log*
 ui-debug.log*
 dist/
 build/
+.vite/
+*/.vite/
 .firebase/
 .DS_Store
 Thumbs.db
