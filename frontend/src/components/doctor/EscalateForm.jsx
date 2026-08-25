@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, AlertOctagon, CheckCircle2, Loader2, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { allocateResourceTransaction } from '../../services/resourceService.js';
-import { suggestPriorityFromNotes } from '../../services/aiService.js';
+import { suggestEscalationPriorityAI } from '../../services/aiService.js';
 import StatusBadge from '../common/StatusBadge.jsx';
 
 export default function EscalateForm({ preselectedResource = null, onSuccess = null }) {
@@ -16,25 +16,30 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
   const [patientId, setPatientId] = useState(patients[1]?.patientId || '');
   const [escalationLevel, setEscalationLevel] = useState('critical');
   const [reason, setReason] = useState('Acute cardiovascular arrest, patient in VTach, urgent resuscitation OT/ICU bed required stat.');
-  const [aiUrgency, setAiUrgency] = useState(null);
+  const [aiUrgency, setAiUrgency] = useState('Critical');
   const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const selectedRes = resources.find(r => r.id === resourceId);
-  const selectedPatient = patients.find(p => p.patientId === patientId);
+  // 800ms Debounced AI Urgency Suggestion (Never auto-selects priority)
+  useEffect(() => {
+    if (!reason || reason.trim().length < 5) return;
+    const timer = setTimeout(async () => {
+      setIsAnalyzingAi(true);
+      try {
+        const res = await suggestEscalationPriorityAI(reason);
+        if (res?.suggestedUrgency) {
+          setAiUrgency(res.suggestedUrgency);
+        }
+      } catch (err) {
+        console.warn('[EscalateForm] AI urgency error:', err);
+      } finally {
+        setIsAnalyzingAi(false);
+      }
+    }, 800);
 
-  const handleAiCheck = async () => {
-    if (!reason) return;
-    setIsAnalyzingAi(true);
-    try {
-      const res = await suggestPriorityFromNotes(reason);
-      setAiUrgency(res);
-      if (res.suggestedPriority) setEscalationLevel(res.suggestedPriority);
-    } finally {
-      setIsAnalyzingAi(false);
-    }
-  };
+    return () => clearTimeout(timer);
+  }, [reason]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -129,7 +134,15 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         </div>
 
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Urgency Level</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-slate-700 font-semibold">Urgency Level</label>
+            {aiUrgency && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-purple-600" />
+                <span>AI suggestion: {aiUrgency}</span>
+              </span>
+            )}
+          </div>
           <select
             value={escalationLevel}
             onChange={(e) => setEscalationLevel(e.target.value)}
@@ -141,41 +154,24 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         </div>
       </div>
 
-      {/* Clinical Reason & AI Urgency Assistant */}
+      {/* Clinical Reason */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-slate-700 font-semibold">Clinical Emergency Notes</label>
-          <button
-            type="button"
-            onClick={handleAiCheck}
-            disabled={isAnalyzingAi}
-            className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {isAnalyzingAi ? 'Analyzing...' : 'AI Urgency Check'}
-          </button>
+          {isAnalyzingAi && (
+            <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin text-purple-600" /> Analyzing urgency...
+            </span>
+          )}
         </div>
 
         <textarea
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          placeholder="Describe patient emergency and reason for priority override..."
           className="clean-input w-full text-xs"
         />
-
-        {aiUrgency && (
-          <div className="mt-2 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-2.5 text-[11px]">
-            <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">AI Suggested Urgency:</span>
-                <StatusBadge status={aiUrgency.suggestedPriority} size="xs" />
-                <span className="font-mono text-slate-500 font-medium">({Math.round(aiUrgency.confidence * 100)}% match)</span>
-              </div>
-              <p className="text-slate-600 mt-1 font-medium">{aiUrgency.clinicalRationale}</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Feedback Banner */}

@@ -1,25 +1,25 @@
 /**
- * Firebase Cloud Functions Entrypoint
- * Exports Callable Functions and REST Endpoints for Transactions, Sagas, and AI
+ * Cloud Functions Entry Point for NEXUS Hospital Operations
+ * Exports V2 Cloud Functions for OCC Transactions, Distributed Sagas, and Gemini AI.
  */
 
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import admin from 'firebase-admin';
 
-// Initialize Admin SDK if not already initialized
-if (admin.apps.length === 0) {
+// Initialize Admin SDK
+if (!admin.apps.length) {
   admin.initializeApp();
 }
-
 const db = admin.firestore();
 
-// Import Transactions
-import { executeAllocateResource } from './transactions/allocateResource.js';
-import { executeCancelResource } from './transactions/cancelResource.js';
-import { executeTransferResource } from './transactions/transferResource.js';
-import { executeEscalateResource } from './transactions/escalateResource.js';
+// Import Transactions & Sagas
+import {
+  executeAllocateResource,
+  executeCancelResource,
+  executeTransferResource,
+  executeEscalateResource
+} from './transactions/concurrencyEngine.js';
 
-// Import Sagas
 import {
   startPrescriptionSaga,
   advancePrescriptionSaga,
@@ -27,79 +27,95 @@ import {
 } from './sagas/prescriptionSaga.js';
 import { executeTransferSaga } from './sagas/transferSaga.js';
 
-// Import AI Functions
-import { explainActivity } from './ai/explainActivity.js';
-import { suggestUrgency } from './ai/suggestUrgency.js';
-import { parseRequest } from './ai/parseRequest.js';
-import { predictAvailability } from './ai/predictAvailability.js';
-import { getSuggestedAction } from './ai/suggestedAction.js';
-import { geminiApiKey } from './ai/geminiClient.js';
+// Import AI Logic & Secret
+import { geminiKey } from './ai/geminiClient.js';
+import { explainActivityLogic } from './ai/explainActivity.js';
+import { suggestUrgencyLogic } from './ai/suggestUrgency.js';
+import { parseResourceRequestLogic } from './ai/parseRequest.js';
+import { predictAvailabilityLogic } from './ai/predictAvailability.js';
+import { getSuggestedActionLogic } from './ai/suggestedAction.js';
 
 // ==========================================
-// CALLABLE FUNCTIONS
+// OCC TRANSACTIONS & SAGA CALLABLES
 // ==========================================
 
-export const allocateResourceCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const allocateResource = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await executeAllocateResource(db, hospitalId, params);
 });
+export const allocateResourceCall = allocateResource;
 
-export const cancelResourceCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const cancelResource = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await executeCancelResource(db, hospitalId, params);
 });
+export const cancelResourceCall = cancelResource;
 
-export const transferResourceCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const transferResource = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await executeTransferResource(db, hospitalId, params);
 });
+export const transferResourceCall = transferResource;
 
-export const escalateResourceCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const escalateResource = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await executeEscalateResource(db, hospitalId, params);
 });
+export const escalateResourceCall = escalateResource;
 
 // Sagas
-export const startPrescriptionCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const startPrescription = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await startPrescriptionSaga(db, hospitalId, params);
 });
+export const startPrescriptionCall = startPrescription;
 
-export const advancePrescriptionCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const advancePrescription = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await advancePrescriptionSaga(db, hospitalId, params);
 });
+export const advancePrescriptionCall = advancePrescription;
 
-export const compensatePrescriptionCall = onCall(async (request) => {
-  const { hospitalId = 'demo-hospital-1', ...params } = request.data;
+export const compensatePrescription = onCall(async (request) => {
+  const { hospitalId = 'demo-hospital-1', ...params } = request.data || {};
   return await compensatePrescriptionSaga(db, hospitalId, params);
 });
+export const compensatePrescriptionCall = compensatePrescription;
 
-// AI Callables (with Cloud Functions GEMINI_API_KEY Secret Binding)
-export const explainActivityCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
-  const { events, hospitalId = 'default-hospital' } = request.data;
-  return await explainActivity(events, hospitalId);
-});
+// ==========================================
+// GEMINI FLASH AI FUNCTIONS (V2 With Secrets)
+// ==========================================
 
-export const suggestUrgencyCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
-  const { clinicalReason, hospitalId = 'default-hospital' } = request.data;
-  return await suggestUrgency(clinicalReason, hospitalId);
+// Function 1: Explain What Happened
+export const explainActivity = onCall({ secrets: [geminiKey] }, async (request) => {
+  return await explainActivityLogic(request.data || {});
 });
+export const explainActivityCall = explainActivity;
 
-export const parseRequestCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
-  const { naturalText, hospitalId = 'default-hospital' } = request.data;
-  return await parseRequest(naturalText, hospitalId);
+// Function 2: Suggest Escalation Urgency
+export const suggestUrgency = onCall({ secrets: [geminiKey] }, async (request) => {
+  return await suggestUrgencyLogic(request.data || {});
 });
+export const suggestUrgencyCall = suggestUrgency;
 
-export const predictAvailabilityCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
-  const { resources, events, hospitalId = 'default-hospital' } = request.data;
-  return await predictAvailability(resources, events, hospitalId);
+// Function 3: Parse Natural Language Resource Request
+export const parseResourceRequest = onCall({ secrets: [geminiKey] }, async (request) => {
+  return await parseResourceRequestLogic(request.data || {});
 });
+export const parseRequestCall = parseResourceRequest;
+export const parseResourceRequestCall = parseResourceRequest;
 
-export const getSuggestedActionCall = onCall({ secrets: [geminiApiKey] }, async (request) => {
-  const { doctorId, doctorName, patients, sagas, events, hospitalId = 'default-hospital' } = request.data;
-  return await getSuggestedAction({ doctorId, doctorName, patients, sagas, events, hospitalId });
+// Function 4: Predict Resource Availability
+export const predictAvailability = onCall({ secrets: [geminiKey] }, async (request) => {
+  return await predictAvailabilityLogic(request.data || {});
 });
+export const predictAvailabilityCall = predictAvailability;
+
+// Function 5: Suggested Next Action
+export const getSuggestedAction = onCall({ secrets: [geminiKey] }, async (request) => {
+  return await getSuggestedActionLogic(request.data || {});
+});
+export const getSuggestedActionCall = getSuggestedAction;
 
 // Health check endpoint
 export const health = onRequest((req, res) => {

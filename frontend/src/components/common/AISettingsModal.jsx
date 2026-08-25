@@ -1,27 +1,8 @@
-import React, { useState } from 'react';
-import { Sparkles, Key, Check, Shield, X } from 'lucide-react';
-import { getCustomApiKey, setCustomApiKey } from '../../services/aiService.js';
+import React from 'react';
+import { Sparkles, Shield, CheckCircle2, X, Lock } from 'lucide-react';
 
 export default function AISettingsModal({ isOpen, onClose }) {
-  const [apiKey, setApiKey] = useState(() => getCustomApiKey());
-  const [saved, setSaved] = useState(false);
-
   if (!isOpen) return null;
-
-  const handleSave = (e) => {
-    e.preventDefault();
-    setCustomApiKey(apiKey);
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      onClose();
-    }, 800);
-  };
-
-  const handleClear = () => {
-    setApiKey('');
-    setCustomApiKey('');
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -38,13 +19,13 @@ export default function AISettingsModal({ isOpen, onClose }) {
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900">AI Intelligence Engine</h3>
-            <p className="text-xs text-slate-500 font-medium">Google Gemini & Local Heuristic Fallback</p>
+            <h3 className="text-base font-bold text-slate-900">AI Intelligence Architecture</h3>
+            <p className="text-xs text-slate-500 font-medium">Google Gemini Flash via Cloud Functions</p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-1.5">
+        <div className="space-y-4 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 space-y-1.5">
             <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
               <Shield className="w-3.5 h-3.5" /> Explainable Medical AI Policy
             </div>
@@ -53,57 +34,26 @@ export default function AISettingsModal({ isOpen, onClose }) {
             </p>
           </div>
 
-          <form onSubmit={handleSave} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Gemini API Key (Optional)
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="AIzaSy... (leave blank for local heuristic engine)"
-                  className="clean-input w-full pl-9 font-mono text-xs"
-                />
-                <Key className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                If no API key is provided, the built-in clinical heuristic engine will seamlessly generate responses.
-              </p>
+          <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 text-slate-700 space-y-2">
+            <div className="flex items-center gap-1.5 text-emerald-900 font-bold">
+              <Lock className="w-3.5 h-3.5 text-emerald-700" /> Enterprise Cloud Secret Security
             </div>
+            <p className="text-slate-600 text-[11px] leading-relaxed font-medium">
+              Gemini API credentials are encrypted in Google Cloud Secret Manager (<code className="font-mono text-emerald-800 font-bold">GEMINI_API_KEY</code>) and called strictly server-side through Firebase Cloud Functions.
+            </p>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> No API keys exposed to browser
+            </div>
+          </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={handleClear}
-                className="text-xs font-semibold text-rose-600 hover:underline"
-              >
-                Clear Key
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="btn-secondary text-xs px-3.5 py-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary text-xs px-4 py-2"
-                >
-                  {saved ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" /> Saved!
-                    </>
-                  ) : (
-                    'Save Settings'
-                  )}
-                </button>
-              </div>
-            </div>
-          </form>
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={onClose}
+              className="btn-primary text-xs px-5 py-2"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

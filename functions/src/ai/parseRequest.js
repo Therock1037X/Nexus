@@ -1,76 +1,101 @@
 import { callGemini } from './geminiClient.js';
 
-const SYSTEM_PROMPT = `Extract structured hospital resource request data from this text. Respond ONLY with valid JSON in this exact format, no other text: {"resourceType": "bed"|"ot"|"equipment"|"medicine", "subType": string or null, "urgency": "normal"|"high"|"critical", "reason": short string}. If a field cannot be determined from the text, use null.`;
+const SYSTEM_PROMPT = `Extract structured hospital resource request data from this text. Respond ONLY with valid JSON, no other text, in this exact shape: {"resourceType": "bed"|"ot"|"equipment"|"medicine", "subType": string|null, "urgency": "normal"|"high"|"critical", "reason": string}. Use null for anything you cannot determine.`;
+
+const VALID_TYPES = ['bed', 'ot', 'equipment', 'medicine'];
+const VALID_URGENCIES = ['normal', 'high', 'critical'];
 
 /**
  * FUNCTION 3: Parse Natural Language Resource Request
- * Returns: { resourceType, subType, urgency, priority, reason }
  */
-export async function parseRequest(naturalText = '', hospitalId = 'default-hospital') {
-  if (!naturalText || !naturalText.trim()) {
-    return null;
+export async function parseResourceRequestLogic(data) {
+  const { requestText = '', naturalText = '', hospitalId = 'default-hospital' } = data || {};
+  const text = requestText || naturalText;
+
+  if (!text || !text.trim()) {
+    return { success: false, error: 'EMPTY_INPUT' };
   }
 
-  try {
-    const rawAiText = await callGemini(SYSTEM_PROMPT, naturalText.trim(), 'gemini-1.5-flash', hospitalId);
-    if (rawAiText) {
-      const cleanJson = rawAiText.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const aiResult = await callGemini(SYSTEM_PROMPT, text.trim(), { hospitalId });
+
+  if (aiResult.success && aiResult.data) {
+    try {
+      const cleanJson = aiResult.data.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
-      // Validate required enum fields
-      const validTypes = ['bed', 'ot', 'equipment', 'medicine'];
-      const validUrgencies = ['normal', 'high', 'critical', 'urgent'];
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'resourceType' in parsed &&
+        'subType' in parsed &&
+        'urgency' in parsed &&
+        'reason' in parsed
+      ) {
+        // Enforce valid enums
+        const resourceType = VALID_TYPES.includes(String(parsed.resourceType).toLowerCase())
+          ? String(parsed.resourceType).toLowerCase()
+          : 'bed';
 
-      if (parsed && typeof parsed === 'object') {
-        const resourceType = validTypes.includes(parsed.resourceType?.toLowerCase()) ? parsed.resourceType.toLowerCase() : 'bed';
-        const urgency = validUrgencies.includes(parsed.urgency?.toLowerCase()) ? parsed.urgency.toLowerCase() : 'normal';
+        const urgency = VALID_URGENCIES.includes(String(parsed.urgency).toLowerCase())
+          ? String(parsed.urgency).toLowerCase()
+          : 'normal';
 
         return {
-          resourceType,
-          subType: parsed.subType || (resourceType === 'bed' ? 'icu' : 'general'),
-          urgency,
-          priority: urgency === 'urgent' ? 'urgent' : urgency,
-          reason: parsed.reason || naturalText.trim()
+          success: true,
+          data: {
+            resourceType,
+            subType: parsed.subType || null,
+            urgency,
+            reason: String(parsed.reason || text.substring(0, 80))
+          }
         };
       }
+    } catch (parseErr) {
+      console.warn('[ParseRequest] JSON parsing error from Gemini output:', parseErr.message);
     }
-  } catch (err) {
-    console.warn('[Parse Request] AI JSON parsing failed, falling back to rule parser:', err.message);
   }
 
-  // Safe Rule-based parser fallback
-  const text = naturalText.toLowerCase();
+  // Deterministic Keyword Heuristic Fallback
+  const lower = text.toLowerCase();
   let resourceType = 'bed';
-  let subType = 'general';
-  let priority = 'normal';
+  let subType = null;
+  let urgency = 'normal';
 
-  if (text.includes('ot') || text.includes('operation') || text.includes('surger')) {
-    resourceType = 'ot';
-    subType = text.includes('cardiac') ? 'cardiac' : text.includes('ortho') ? 'orthopedic' : 'general_surgery';
-  } else if (text.includes('ventilator') || text.includes('mri') || text.includes('ct') || text.includes('xray') || text.includes('equipment')) {
+  if (lower.includes('ventilator') || lower.includes('vent')) {
     resourceType = 'equipment';
-    subType = text.includes('ventilator') ? 'ventilator' : text.includes('mri') ? 'mri' : text.includes('ct') ? 'ct' : 'xray';
-  } else if (text.includes('medicine') || text.includes('drug') || text.includes('injection') || text.includes('adrenaline') || text.includes('amoxicillin')) {
+    subType = 'Ventilator';
+  } else if (lower.includes('ot') || lower.includes('theatre') || lower.includes('surgery') || lower.includes('cardiac or')) {
+    resourceType = 'ot';
+    subType = 'Cardiac Surgery';
+  } else if (lower.includes('x-ray') || lower.includes('mri') || lower.includes('ct scan')) {
+    resourceType = 'equipment';
+    subType = 'Imaging';
+  } else if (lower.includes('paracetamol') || lower.includes('amoxicillin') || lower.includes('insulin') || lower.includes('salbutamol') || lower.includes('medicine')) {
     resourceType = 'medicine';
-    subType = 'emergency_drugs';
+  } else if (lower.includes('icu') || lower.includes('critical care')) {
+    resourceType = 'bed';
+    subType = 'icu';
+  } else if (lower.includes('er') || lower.includes('emergency bay') || lower.includes('trauma')) {
+    resourceType = 'bed';
+    subType = 'emergency';
   } else {
     resourceType = 'bed';
-    subType = text.includes('icu') ? 'icu' : text.includes('emergency') ? 'emergency' : 'general';
+    subType = 'general';
   }
 
-  if (text.includes('critical') || text.includes('arrest') || text.includes('stat') || text.includes('immediately')) {
-    priority = 'critical';
-  } else if (text.includes('urgent') || text.includes('deteriorat') || text.includes('emergency')) {
-    priority = 'urgent';
-  } else if (text.includes('high') || text.includes('expedite') || text.includes('soon')) {
-    priority = 'high';
+  if (lower.includes('stat') || lower.includes('critical') || lower.includes('arrest') || lower.includes('stemi')) {
+    urgency = 'critical';
+  } else if (lower.includes('urgent') || lower.includes('asap') || lower.includes('rapid') || lower.includes('high')) {
+    urgency = 'high';
   }
 
   return {
-    resourceType,
-    subType,
-    urgency: priority,
-    priority,
-    reason: naturalText.trim()
+    success: true,
+    data: {
+      resourceType,
+      subType,
+      urgency,
+      reason: text.length > 80 ? text.substring(0, 80) + '...' : text
+    }
   };
 }

@@ -5,6 +5,7 @@ import { parseNaturalLanguageRequest } from '../../services/aiService.js';
 export default function NaturalLanguageRequestInput({ onParsed }) {
   const [inputPrompt, setInputPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const samplePrompts = [
     'Need an ICU bed urgently for 62yo female with acute ARDS and ventilator',
@@ -17,11 +18,18 @@ export default function NaturalLanguageRequestInput({ onParsed }) {
     if (!text.trim()) return;
 
     setLoading(true);
+    setErrorMessage(null);
     try {
-      const parsed = await parseNaturalLanguageRequest(text);
-      if (parsed) {
-        onParsed(parsed);
+      const res = await parseNaturalLanguageRequest(text);
+      if (res?.success && res?.data) {
+        onParsed(res.data);
+      } else if (res?.resourceType) {
+        onParsed(res);
+      } else {
+        setErrorMessage("Couldn't understand that — please fill the form manually");
       }
+    } catch {
+      setErrorMessage("Couldn't understand that — please fill the form manually");
     } finally {
       setLoading(false);
     }
@@ -65,6 +73,12 @@ export default function NaturalLanguageRequestInput({ onParsed }) {
           )}
         </button>
       </div>
+
+      {errorMessage && (
+        <div className="mt-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold">
+          ⚠️ {errorMessage}
+        </div>
+      )}
 
       {/* Quick Sample Prompts */}
       <div className="flex items-center gap-2 mt-3 flex-wrap">

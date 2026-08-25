@@ -1,112 +1,124 @@
+import admin from 'firebase-admin';
 import { callGemini } from './geminiClient.js';
 
-const SYSTEM_PROMPT = `You are helping a busy doctor know what to check first. Given this list of their patients' pending items, pick the SINGLE most time-sensitive or important one and describe it in one short, plain sentence. If nothing needs attention, say so plainly. Do not use technical terms.`;
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+const db = admin.firestore();
+
+const SYSTEM_PROMPT = `You are helping a busy doctor know what to check first. Given this list of their patients' pending items, pick the SINGLE most time-sensitive or important one and describe it in one short, plain sentence a doctor can read in 2 seconds. If nothing urgently needs attention, say so plainly, e.g. 'Nothing urgent right now.' Do not use technical terms.`;
 
 /**
- * FUNCTION: Suggested Next Action
- * Scans doctor's patients, pending prescriptions, and recent events to surface
- * the single most relevant item for immediate attention.
+ * FUNCTION 5: Suggested Next Action (Doctor Dashboard)
  */
-export async function getSuggestedAction({
-  doctorId = 'doc-1',
-  doctorName = 'Dr. Ananya Sharma',
-  patients = [],
-  sagas = [],
-  events = [],
-  hospitalId = 'default-hospital'
-}) {
-  const myPatients = patients.filter(p => p.assignedDoctorId === doctorId || p.assignedDoctorName === doctorName);
-  const myPatientIds = myPatients.map(p => p.patientId);
+export async function getSuggestedActionLogic(data) {
+  const {
+    doctorId = 'doc-1',
+    doctorName = 'Dr. Ananya Sharma',
+    hospitalId = 'default-hospital',
+    patients = [],
+    sagas = [],
+    events = []
+  } = data || {};
 
-  const mySagas = sagas.filter(s => s.doctorId === doctorId || myPatientIds.includes(s.patientId));
-  const pendingDispensed = mySagas.find(s => s.status === 'in_progress' && s.steps?.[1]?.status === 'done' && s.steps?.[2]?.status === 'pending');
-  const criticalPatient = myPatients.find(p => p.status === 'critical' && !p.currentBedId);
-  const recentRejection = events.find(e => e.type === 'conflict_rejected' && (e.actorId === doctorId || myPatientIds.includes(e.payload?.patientId)));
+  let patientList = patients;
+  let sagaList = sagas;
+  let eventList = events;
 
-  // Prepare concise context for Gemini
-  const contextSummary = {
-    doctor: doctorName,
-    assignedPatientsCount: myPatients.length,
-    criticalUnallocatedPatients: myPatients.filter(p => !p.currentBedId).map(p => ({ name: p.name, reason: p.diagnosis || p.reason })),
-    activePrescriptions: mySagas.filter(s => s.status === 'in_progress').map(s => ({
-      patient: s.patientName,
-      medicine: s.medicineName,
-      dispensed: s.steps?.[1]?.status === 'done',
-      administered: s.steps?.[2]?.status === 'done'
-    })),
-    recentConflict: recentRejection ? { resource: recentRejection.resourceId, reason: recentRejection.payload?.rejectionReason } : null
-  };
-
-  try {
-    const aiText = await callGemini(
-      SYSTEM_PROMPT,
-      JSON.stringify(contextSummary, null, 2),
-      'gemini-1.5-flash',
-      hospitalId
-    );
-
-    if (aiText && aiText.trim()) {
-      const cleanSentence = aiText.replace(/```/g, '').trim();
-      let targetTab = 'patients';
-      let urgencyLevel = 'normal';
-
-      if (pendingDispensed) {
-        targetTab = 'prescribe';
-        urgencyLevel = 'normal';
-      } else if (criticalPatient) {
-        targetTab = 'request';
-        urgencyLevel = 'critical';
-      } else if (recentRejection) {
-        targetTab = 'escalate';
-        urgencyLevel = 'urgent';
+  // Firestore fallback if not passed
+  if (!patientList.length || !sagaList.length) {
+    try {
+      const [patSnap, sagaSnap] = await Promise.all([
+        db.collection('hospitals').doc(hospitalId).collection('patients').get(),
+        db.collection('hospitals').doc(hospitalId).collection('sagas').where('status', '==', 'in_progress').get()
+      ]);
+      if (!patSnap.empty && !patientList.length) {
+        patientList = patSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       }
-
-      return {
-        actionSummary: cleanSentence,
-        targetTab,
-        urgencyLevel
-      };
+      if (!sagaSnap.empty && !sagaList.length) {
+        sagaList = sagaSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+    } catch (err) {
+      console.warn('[SuggestedAction] Firestore fetch fallback:', err.message);
     }
-  } catch (err) {
-    console.warn('[Suggested Action] AI call fallback triggered:', err.message);
   }
 
-  // Deterministic smart rule fallback
+  const myPatients = patientList.filter(
+    p => p.assignedDoctorId === doctorId || p.assignedDoctorName === doctorName
+  );
+  const myPatientIds = myPatients.map(p => p.patientId);
+
+  const mySagas = sagaList.filter(
+    s => s.doctorId === doctorId || myPatientIds.includes(s.patientId)
+  );
+
+  const pendingDispensed = mySagas.find(
+    s => s.status === 'in_progress' && s.steps?.[1]?.status === 'done' && s.steps?.[2]?.status === 'pending'
+  );
+  const criticalPatient = myPatients.find(
+    p => p.status === 'critical' && !p.currentBedId
+  );
+  const recentRejection = eventList.find(
+    e => e.type === 'conflict_rejected' && (e.actorId === doctorId || myPatientIds.includes(e.payload?.patientId))
+  );
+
+  const contextData = {
+    doctor: doctorName,
+    assignedPatients: myPatients.length,
+    criticalUnallocated: criticalPatient ? { name: criticalPatient.name, reason: criticalPatient.diagnosis } : null,
+    dispensedPrescriptionWaitingNurse: pendingDispensed ? { patient: pendingDispensed.patientName, medicine: pendingDispensed.medicineName } : null,
+    recentDeclinedRequest: recentRejection ? { resource: recentRejection.resourceId, reason: recentRejection.payload?.rejectionReason } : null
+  };
+
+  const aiResult = await callGemini(
+    SYSTEM_PROMPT,
+    JSON.stringify(contextData, null, 2),
+    { hospitalId }
+  );
+
+  let relatedTab = 'patients';
+  if (pendingDispensed) relatedTab = 'prescribe';
+  else if (criticalPatient) relatedTab = 'patients';
+  else if (recentRejection) relatedTab = 'escalate';
+
+  if (aiResult.success && aiResult.data) {
+    return {
+      message: aiResult.data.replace(/```/g, '').trim(),
+      relatedTab
+    };
+  }
+
+  // Deterministic Fallback
   if (criticalPatient) {
     return {
-      actionSummary: `${criticalPatient.name} is admitted with acute symptoms and is awaiting an ICU bed allocation.`,
-      targetTab: 'request',
-      urgencyLevel: 'critical'
+      message: `${criticalPatient.name} is admitted with acute symptoms and is awaiting an ICU bed allocation.`,
+      relatedTab: 'patients'
     };
   }
 
   if (pendingDispensed) {
     return {
-      actionSummary: `${pendingDispensed.patientName}'s ${pendingDispensed.medicineName} was dispensed by Central Pharmacy and is ready for bedside administration.`,
-      targetTab: 'prescribe',
-      urgencyLevel: 'normal'
+      message: `${pendingDispensed.patientName}'s ${pendingDispensed.medicineName} was dispensed by Central Pharmacy and is ready for bedside administration.`,
+      relatedTab: 'prescribe'
     };
   }
 
   if (recentRejection) {
     return {
-      actionSummary: `Your request for ${recentRejection.resourceId} was held for a higher-priority case — select an alternative bed or request an override.`,
-      targetTab: 'escalate',
-      urgencyLevel: 'urgent'
+      message: `Your request for ${recentRejection.resourceId} was held for a higher-urgency emergency — select an alternative bed or request an override.`,
+      relatedTab: 'escalate'
     };
   }
 
   if (myPatients.length > 0) {
     return {
-      actionSummary: `All ${myPatients.length} of your assigned patients are stable with active orders on track — no urgent actions needed.`,
-      targetTab: 'patients',
-      urgencyLevel: 'info'
+      message: `All ${myPatients.length} of your assigned patients are stable with active orders on track.`,
+      relatedTab: 'patients'
     };
   }
 
   return {
-    actionSummary: 'No active patient alerts or pending orders at this time.',
-    targetTab: 'patients',
-    urgencyLevel: 'info'
+    message: 'Nothing urgent right now.',
+    relatedTab: 'patients'
   };
 }

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Sparkles, Bot, CheckCircle2, Loader2 } from 'lucide-react';
-import { explainAuditEvents } from '../../services/aiService.js';
+import { explainAuditTrailWithAI } from '../../services/aiService.js';
 
-export default function AIExplanationPanel({ events = [] }) {
+export default function AIExplanationPanel({ events = [], resourceId = null, patientId = null }) {
   const [explanation, setExplanation] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -10,8 +10,10 @@ export default function AIExplanationPanel({ events = [] }) {
     if (!events || events.length === 0) return;
     setLoading(true);
     try {
-      const summary = await explainAuditEvents(events);
-      setExplanation(summary);
+      const summary = await explainAuditTrailWithAI(events, resourceId, patientId);
+      setExplanation(summary || 'Summary unavailable — see the log below');
+    } catch {
+      setExplanation('Summary unavailable — see the log below');
     } finally {
       setLoading(false);
     }

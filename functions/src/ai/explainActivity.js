@@ -1,47 +1,71 @@
+import admin from 'firebase-admin';
 import { callGemini } from './geminiClient.js';
 
-const SYSTEM_PROMPT = `You are summarizing hospital system activity for a non-technical hospital administrator. Given this list of events, write a short, factual, plain-English summary (2-4 sentences) of what happened and why, in the order it happened. Use simple words. Do not use technical terms like transaction, saga, deterministic, or concurrency. Do not invent any detail not present in the event data. If the events show a conflict, clearly state which request won and why in one plain sentence.`;
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+const db = admin.firestore();
+
+const SYSTEM_PROMPT = `You are summarizing hospital activity for a non-technical hospital administrator. Given this list of events, write a short, factual, plain-English summary (2-4 sentences) of what happened and in what order. Use simple everyday words. Do not use technical terms like transaction, saga, deterministic, or concurrency. Do not invent any detail not present in the data. If the events show a conflict between two requests, clearly state which one won and why, in one plain sentence.`;
 
 /**
  * FUNCTION 1: Explain What Happened (Activity Summary)
- * Returns a short, plain-English paragraph without jargon.
  */
-export async function explainActivity(events = [], hospitalId = 'default-hospital') {
-  if (!events || !Array.isArray(events) || events.length === 0) {
-    return 'No recent activity recorded yet.';
+export async function explainActivityLogic(data) {
+  const { resourceId, patientId, hospitalId = 'default-hospital', events = [] } = data || {};
+
+  let eventList = events;
+
+  // If events not provided, fetch from Firestore
+  if (!eventList || eventList.length === 0) {
+    try {
+      let query = db.collection('hospitals').doc(hospitalId).collection('events');
+      if (resourceId) {
+        query = query.where('resourceId', '==', resourceId);
+      } else if (patientId) {
+        query = query.where('payload.patientId', '==', patientId);
+      }
+      const snap = await query.orderBy('timestamp', 'desc').limit(15).get();
+      if (!snap.empty) {
+        eventList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+    } catch (err) {
+      console.warn('[ExplainActivity] Firestore fetch fallback:', err.message);
+    }
   }
 
-  // Format events cleanly for the model
-  const simplifiedEvents = events.slice(0, 15).map(e => ({
+  if (!eventList || eventList.length === 0) {
+    return { summary: 'No recent events recorded for this resource or patient.' };
+  }
+
+  // Format events clearly for Gemini
+  const formattedEvents = eventList.map(e => ({
     time: e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : 'Recent',
-    action: e.type,
-    resource: e.resourceId || 'Bed/Unit',
-    actor: e.actorName || 'Staff',
-    role: e.actorRole || 'Clinical staff',
-    patient: e.payload?.patientName || 'Patient',
-    details: e.payload?.reason || e.payload?.description || e.payload?.rejectionReason || ''
+    action: e.payload?.action || e.type,
+    resource: e.resourceId || 'Bed / Resource',
+    staff: e.actorName || 'Clinical Staff',
+    details: e.payload?.details || e.payload?.reason || e.payload?.rejectionReason || 'Care activity update'
   }));
 
-  const inputPayload = JSON.stringify(simplifiedEvents, null, 2);
+  const aiResult = await callGemini(
+    SYSTEM_PROMPT,
+    JSON.stringify(formattedEvents, null, 2),
+    { hospitalId }
+  );
 
-  try {
-    const aiResponse = await callGemini(SYSTEM_PROMPT, inputPayload, 'gemini-1.5-flash', hospitalId);
-    if (aiResponse) {
-      // Clean any accidental markdown quotes or backticks
-      return aiResponse.replace(/```/g, '').trim();
-    }
-  } catch (err) {
-    console.warn('[Explain Activity] AI fallback triggered:', err.message);
+  if (aiResult.success && aiResult.data) {
+    return { summary: aiResult.data.replace(/```/g, '').trim() };
   }
 
-  // Safe deterministic fallback without jargon
-  const actors = [...new Set(events.map(e => e.actorName).filter(Boolean))].join(', ');
-  const resources = [...new Set(events.map(e => e.resourceId).filter(Boolean))].join(', ');
-  const hasConflict = events.some(e => e.type === 'conflict_rejected' || e.type === 'escalation_preemption');
+  // Fallback summary if AI call fails
+  const allocs = eventList.filter(e => e.type === 'allocate' || e.type === 'reserve').length;
+  const preempts = eventList.filter(e => e.type === 'escalation_preemption' || e.type === 'conflict_resolved').length;
+  const rejections = eventList.filter(e => e.type === 'conflict_rejected').length;
 
-  if (hasConflict) {
-    return `Recent hospital activity shows multiple requests for ${resources || 'beds'}. The system assigned the resource to the highest urgency emergency patient, and the other doctor was safely notified to select an alternate unit.`;
-  }
+  let fallback = `In the recorded history, ${eventList.length} updates took place. `;
+  if (allocs > 0) fallback += `${allocs} resource allocations were assigned successfully. `;
+  if (preempts > 0) fallback += `An emergency priority override was safely applied for an acute patient. `;
+  if (rejections > 0) fallback += `A lower-urgency request was held because the bed was already occupied. `;
 
-  return `${actors || 'Clinical staff'} updated records and care events for ${resources || 'assigned beds'}. All updates were saved successfully in order.`;
+  return { summary: fallback.trim() };
 }
