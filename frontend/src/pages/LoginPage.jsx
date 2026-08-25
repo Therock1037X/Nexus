@@ -29,7 +29,7 @@ export default function LoginPage() {
     switchPersona(personaId);
     if (targetRole === 'doctor') navigate('/doctor/dashboard');
     else if (targetRole === 'nurse') navigate('/nurse/dashboard');
-    else if (targetRole === 'pharmacy') navigate('/pharmacy/dashboard');
+    else if (targetRole === 'pharmacy') navigate('/admin/dashboard?tab=pharmacy');
     else navigate('/admin/dashboard');
   };
 
@@ -43,7 +43,7 @@ export default function LoginPage() {
         await signup(email, password, role, name);
         if (role === 'doctor') navigate('/doctor/dashboard');
         else if (role === 'nurse') navigate('/nurse/dashboard');
-        else if (role === 'pharmacy') navigate('/pharmacy/dashboard');
+        else if (role === 'pharmacy') navigate('/admin/dashboard?tab=pharmacy');
         else navigate('/admin/dashboard');
       } else {
         await login(email, password);
