@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pill, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Pill, AlertTriangle, CheckCircle2, Loader2, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import { startPrescriptionSaga } from '../../services/sagaService.js';
@@ -46,7 +46,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       playAlertTone('success');
       setFeedback({
         type: 'success',
-        message: `Prescription Saga initiated (#${result.sagaId})! Stock decremented to ${result.remainingStock}. Order routed to Pharmacy.`
+        message: `Prescription sent successfully! Stock updated. Order dispatched to Central Pharmacy.`
       });
 
       if (onSuccess) onSuccess(result);
@@ -54,7 +54,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       playAlertTone('conflict');
       setFeedback({
         type: 'error',
-        message: `Prescription Failed: ${err.message}`
+        message: `Could not send prescription: ${err.message}`
       });
     } finally {
       setSubmitting(false);
@@ -73,7 +73,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
         >
           {patients.map((p) => (
             <option key={p.patientId} value={p.patientId}>
-              {p.name} ({p.patientId}) • Bed: {p.currentBedId || 'N/A'} • {p.diagnosis}
+              {p.name} ({p.patientId}) • Bed: {p.currentBedId || 'Awaiting Bed'} • {p.diagnosis}
             </option>
           ))}
         </select>
@@ -82,10 +82,10 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       {/* Medicine Inventory Selector */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-slate-700 font-semibold">Select Pharmaceutical</label>
+          <label className="text-slate-700 font-semibold">Select Medication</label>
           {selectedMed && (
             <span className="font-mono text-[11px] text-slate-500 font-medium">
-              Live Stock: <strong className={isStockScarce ? 'text-amber-700' : 'text-emerald-700'}>{selectedMed.quantity} {selectedMed.unit}</strong>
+              In Stock: <strong className={isStockScarce ? 'text-amber-700' : 'text-emerald-700'}>{selectedMed.quantity} {selectedMed.unit}</strong>
             </span>
           )}
         </div>
@@ -97,7 +97,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
         >
           {medicines.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.name} [Stock: {m.quantity} {m.unit}] {m.isScarce ? '⚠️ SCARCE DEMO' : ''}
+              {m.name} [Available: {m.quantity} {m.unit}] {m.isScarce ? '⚠️ Low Reserve' : ''}
             </option>
           ))}
         </select>
@@ -107,7 +107,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
           <div className="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2 text-[11px] font-medium">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-600" />
             <span>
-              Low Stock Notice: Only {selectedMed.quantity} {selectedMed.unit} remaining. Perfect for demoing automated stock rollbacks!
+              Low Stock Notice: Only {selectedMed.quantity} {selectedMed.unit} remaining in pharmacy.
             </span>
           </div>
         )}
@@ -116,7 +116,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       {/* Quantity & Dosage */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Quantity to Deduct</label>
+          <label className="block text-slate-700 font-semibold mb-1">Quantity</label>
           <input
             type="number"
             min="1"
@@ -128,7 +128,7 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
         </div>
 
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Dosage & Frequency</label>
+          <label className="block text-slate-700 font-semibold mb-1">Dosage & Schedule</label>
           <input
             type="text"
             value={dosage}
@@ -141,12 +141,12 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
 
       {/* Clinical Notes */}
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Clinical Instructions & Notes</label>
+        <label className="block text-slate-700 font-semibold mb-1">Special Instructions for Nurse & Pharmacy</label>
         <textarea
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Monitor blood pressure and telemetry 15 mins post-injection..."
+          placeholder="e.g. Monitor blood pressure and vitals 15 mins post-dose..."
           className="clean-input w-full"
         />
       </div>
@@ -177,11 +177,11 @@ export default function PrescriptionForm({ preselectedPatient = null, onSuccess 
       >
         {submitting ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Starting 3-Step Saga...
+            <Loader2 className="w-4 h-4 animate-spin" /> Sending to Pharmacy...
           </>
         ) : (
           <>
-            <Pill className="w-4 h-4" /> Start Prescription Saga (Step 1: Order)
+            <Send className="w-4 h-4" /> Send Prescription
           </>
         )}
       </button>

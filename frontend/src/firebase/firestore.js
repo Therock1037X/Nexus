@@ -13,6 +13,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
   runTransaction
 } from 'firebase/firestore';
@@ -58,6 +59,7 @@ export {
   getDocs,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
   runTransaction
 };

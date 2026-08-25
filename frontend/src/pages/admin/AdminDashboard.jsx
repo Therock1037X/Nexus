@@ -11,7 +11,8 @@ import {
   Bug,
   PackageCheck,
   Pill,
-  Sparkles
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
@@ -22,6 +23,7 @@ import AuditTrailSearch from '../../components/admin/AuditTrailSearch.jsx';
 import ResourceSetupForm from '../../components/admin/ResourceSetupForm.jsx';
 import FailureDemoPanel from '../../components/admin/FailureDemoPanel.jsx';
 import PrescriptionQueue from '../../components/pharmacy/PrescriptionQueue.jsx';
+import AdmitPatientModal from '../../components/common/AdmitPatientModal.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 
 export default function AdminDashboard() {
@@ -31,6 +33,7 @@ export default function AdminDashboard() {
 
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam || 'grid');
+  const [showAdmitModal, setShowAdmitModal] = useState(false);
 
   useEffect(() => {
     if (tabParam && tabParam !== activeTab) {
@@ -63,25 +66,35 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Hospital Operations & Concurrency Command
+            Admin Dashboard
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Real-time multi-floor resource control, optimistic concurrency control (OCC), distributed sagas, audit ledger, and pharmacy dispatch.
+            Real-time hospital operations, ward resources, conflict feed, audit trail, and pharmacy queue.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-semibold">
-            Operations Officer: <strong className="text-slate-800">{currentUser?.name || 'Operations Director'}</strong>
-          </span>
-          <StatusBadge status="normal" size="xs" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAdmitModal(true)}
+            className="btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 font-bold shadow-xs"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Admit Patient (OPD)</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 font-semibold hidden sm:inline">
+              Officer: <strong className="text-slate-800">{currentUser?.name || 'Operations Director'}</strong>
+            </span>
+            <StatusBadge status="normal" size="xs" />
+          </div>
         </div>
       </div>
 
-      {/* Top 4 Floating Metric & Stat Cards (BhumiGIS Reference Pattern) */}
+      {/* Top 4 Floating Metric & Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Bed Occupancy */}
-        <div className="clean-card p-5 flex flex-col justify-between">
+        <div className="clean-card p-5 flex flex-col justify-between bg-white">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bed Occupancy</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
@@ -99,7 +112,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Card 2: ICU Availability */}
-        <div className="clean-card p-5 flex flex-col justify-between">
+        <div className="clean-card p-5 flex flex-col justify-between bg-white">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">ICU Beds Free</span>
             <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
@@ -116,10 +129,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Card 3: Active Sagas */}
-        <div className="clean-card p-5 flex flex-col justify-between">
+        {/* Card 3: Active Prescriptions */}
+        <div className="clean-card p-5 flex flex-col justify-between bg-white">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Sagas</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Prescriptions</span>
             <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
               <GitPullRequest className="w-4 h-4" />
             </div>
@@ -129,15 +142,15 @@ export default function AdminDashboard() {
               {stats.inProgressSagasCount}
             </div>
             <div className="text-xs text-slate-500 font-medium mt-1">
-              • Multi-step distributed transactions
+              • In pharmacy & nurse verification loop
             </div>
           </div>
         </div>
 
-        {/* Card 4: OCC Conflicts Handled */}
-        <div className="clean-card p-5 flex flex-col justify-between">
+        {/* Card 4: Overrides Handled */}
+        <div className="clean-card p-5 flex flex-col justify-between bg-white">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Conflicts Logged</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Overrides Handled</span>
             <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
               <GitMerge className="w-4 h-4" />
             </div>
@@ -147,13 +160,13 @@ export default function AdminDashboard() {
               {stats.conflictsCount}
             </div>
             <div className="text-xs text-slate-500 font-medium mt-1">
-              • Deterministic resolution applied
+              • Emergency preemption logged
             </div>
           </div>
         </div>
       </div>
 
-      {/* Horizontal Feature Tab Bar (Directly below stats) */}
+      {/* Horizontal Feature Tab Bar */}
       <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/70 border border-slate-300/60 rounded-2xl w-full overflow-x-auto shadow-xs">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -231,7 +244,7 @@ export default function AdminDashboard() {
         <div className="space-y-6 animate-in fade-in duration-150">
           {/* 3 Pharmacy Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Awaiting Dispense</span>
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
@@ -248,7 +261,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Scarce Drugs</span>
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
@@ -265,7 +278,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="clean-card p-5 flex flex-col justify-between">
+            <div className="clean-card p-5 flex flex-col justify-between bg-white">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Formularies</span>
                 <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
@@ -299,7 +312,7 @@ export default function AdminDashboard() {
                 return (
                   <div
                     key={med.id}
-                    className={`clean-card p-4 transition-all ${
+                    className={`clean-card p-4 transition-all bg-white ${
                       isLow ? 'border-amber-300 bg-amber-50/40' : ''
                     }`}
                   >
@@ -329,7 +342,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <PackageCheck className="w-5 h-5 text-purple-700" />
-                Incoming Prescription Fulfillment Queue (Step 2 in Saga Loop)
+                Incoming Prescription Fulfillment Queue
               </h3>
               <span className="text-xs font-mono text-slate-500 font-bold">
                 {incomingPrescriptions.length} Orders Awaiting Verification
@@ -340,6 +353,12 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Admit Patient Modal */}
+      <AdmitPatientModal
+        isOpen={showAdmitModal}
+        onClose={() => setShowAdmitModal(false)}
+      />
     </div>
   );
 }

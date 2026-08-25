@@ -53,7 +53,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         patientName: selectedPatient?.name || 'Critical Trauma Patient',
         allocationType: 'occupied',
         priority: escalationLevel,
-        reason: `[EMERGENCY ESCALATION OVERRIDE] ${reason}`,
+        reason: `[EMERGENCY OVERRIDE] ${reason}`,
         aiSuggestedPriority: aiUrgency?.suggestedPriority || 'critical'
       });
 
@@ -61,8 +61,8 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       setFeedback({
         type: 'success',
         message: result.preemptionNotice
-          ? `Preemption Successful! ${result.preemptionNotice}`
-          : `Resource ${resourceId} successfully escalated and allocated at tier ${escalationLevel.toUpperCase()}!`
+          ? `Priority Override Successful! ${result.preemptionNotice}`
+          : `Resource ${resourceId} successfully escalated and allocated to ${selectedPatient?.name || 'Patient'}!`
       });
 
       if (onSuccess) onSuccess(result);
@@ -70,7 +70,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       playAlertTone('conflict');
       setFeedback({
         type: 'error',
-        message: `Escalation Conflict: ${err.message}`
+        message: `Override not completed: ${err.message}`
       });
     } finally {
       setSubmitting(false);
@@ -82,16 +82,16 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-2.5">
         <AlertOctagon className="w-4 h-4 flex-shrink-0 text-rose-600 mt-0.5" />
         <div>
-          <span className="font-bold block text-rose-950">Deterministic Priority Preemption</span>
+          <span className="font-bold block text-rose-950">Priority Override</span>
           <span className="text-[11px] text-rose-800 font-medium">
-            Escalating to CRITICAL will deterministically override any lower-priority holds on the selected resource, log an immutable escalation event, and notify prior holders.
+            Selecting CRITICAL urgency will reassign this resource to an emergency patient and notify the previous holder to choose an alternate bed.
           </span>
         </div>
       </div>
 
       {/* Target Held Resource Selector */}
       <div>
-        <label className="block text-slate-700 font-semibold mb-1">Target Resource to Override / Preempt</label>
+        <label className="block text-slate-700 font-semibold mb-1">Target Resource to Override</label>
         <select
           value={resourceId}
           onChange={(e) => setResourceId(e.target.value)}
@@ -105,8 +105,8 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         </select>
         {selectedRes?.currentAllocation && (
           <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between font-medium">
-            <span>Currently Held By: <strong className="text-slate-900 font-bold">{selectedRes.currentAllocation.patientName}</strong></span>
-            <span>Current Hold Priority: <StatusBadge status={selectedRes.currentAllocation.priority || 'normal'} size="xs" /></span>
+            <span>Currently Assigned To: <strong className="text-slate-900 font-bold">{selectedRes.currentAllocation.patientName}</strong></span>
+            <span>Current Urgency: <StatusBadge status={selectedRes.currentAllocation.priority || 'normal'} size="xs" /></span>
           </div>
         )}
       </div>
@@ -114,7 +114,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       {/* Patient Requiring Escalation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Urgent Patient</label>
+          <label className="block text-slate-700 font-semibold mb-1">Emergency Patient</label>
           <select
             value={patientId}
             onChange={(e) => setPatientId(e.target.value)}
@@ -129,14 +129,14 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
         </div>
 
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Escalation Override Level</label>
+          <label className="block text-slate-700 font-semibold mb-1">Urgency Level</label>
           <select
             value={escalationLevel}
             onChange={(e) => setEscalationLevel(e.target.value)}
             className="clean-input w-full font-mono font-bold text-rose-800 bg-rose-50/60 border-rose-200"
           >
-            <option value="critical">CRITICAL (Tier 4 - Immediate Preemption)</option>
-            <option value="urgent">URGENT (Tier 3 - Accelerated Review)</option>
+            <option value="critical">CRITICAL (Immediate Emergency Override)</option>
+            <option value="urgent">URGENT (Accelerated Review)</option>
           </select>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       {/* Clinical Reason & AI Urgency Assistant */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="text-slate-700 font-semibold">Free-Text Emergency Indication</label>
+          <label className="text-slate-700 font-semibold">Clinical Emergency Notes</label>
           <button
             type="button"
             onClick={handleAiCheck}
@@ -152,7 +152,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
             className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            {isAnalyzingAi ? 'Analyzing Urgency...' : 'AI Urgency Score'}
+            {isAnalyzingAi ? 'Analyzing...' : 'AI Urgency Check'}
           </button>
         </div>
 
@@ -168,7 +168,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
             <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">AI Suggested Priority:</span>
+                <span className="font-bold text-slate-900">AI Suggested Urgency:</span>
                 <StatusBadge status={aiUrgency.suggestedPriority} size="xs" />
                 <span className="font-mono text-slate-500 font-medium">({Math.round(aiUrgency.confidence * 100)}% match)</span>
               </div>
@@ -204,11 +204,11 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       >
         {submitting ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Evaluating Preemption Tiebreaker...
+            <Loader2 className="w-4 h-4 animate-spin" /> Applying Priority Override...
           </>
         ) : (
           <>
-            <ShieldAlert className="w-4 h-4" /> Trigger Emergency Preemption Override
+            <ShieldAlert className="w-4 h-4" /> Request Priority Override
           </>
         )}
       </button>

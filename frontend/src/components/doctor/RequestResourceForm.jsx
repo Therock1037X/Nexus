@@ -25,14 +25,14 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
   const [patientId, setPatientId] = useState('');
   const [customPatientName, setCustomPatientName] = useState('');
   const [priority, setPriority] = useState('normal');
-  const [allocationType, setAllocationType] = useState('reserved'); // 'reserved' | 'occupied'
+  const [allocationType, setAllocationType] = useState('occupied'); // 'reserved' | 'occupied'
   const [reason, setReason] = useState('');
   const [aiUrgency, setAiUrgency] = useState(null);
   const [isAnalyzingAi, setIsAnalyzingAi] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  // Apply parsed NLP data from Feature 3 if provided
+  // Apply parsed NLP data if provided
   useEffect(() => {
     if (initialParsedData) {
       if (initialParsedData.resourceType) setResourceType(initialParsedData.resourceType);
@@ -40,7 +40,6 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       if (initialParsedData.priority) setPriority(initialParsedData.priority);
       if (initialParsedData.reason) {
         setReason(initialParsedData.reason);
-        // Automatically trigger Feature 2 urgency scoring
         handleAiUrgencyCheck(initialParsedData.reason);
       }
     }
@@ -63,7 +62,6 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
     }
   }, [candidateResources, selectedResourceId]);
 
-  // AI Feature 2: Trigger urgency scoring on clinical reason blur/input
   const handleAiUrgencyCheck = async (textToCheck) => {
     const text = textToCheck || reason;
     if (!text || text.trim().length < 6) return;
@@ -82,7 +80,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedResourceId) {
-      setFeedback({ type: 'error', message: 'Please select a target resource.' });
+      setFeedback({ type: 'error', message: 'Please select a resource.' });
       return;
     }
 
@@ -109,7 +107,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       playAlertTone('success');
       setFeedback({
         type: 'success',
-        message: `Resource ${selectedResourceId} allocated successfully! Version incremented to v${result.version}.`
+        message: `Resource ${selectedResourceId} successfully assigned to ${finalPatientName}!`
       });
 
       if (onSuccess) onSuccess(result);
@@ -117,7 +115,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
       playAlertTone('conflict');
       setFeedback({
         type: 'error',
-        message: `Transaction Rejected: ${err.message}`
+        message: `Request not completed: ${err.message}`
       });
     } finally {
       setSubmitting(false);
@@ -194,13 +192,13 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
         </div>
       </div>
 
-      {/* 2. Target Resource Selector with Live State Matrix */}
+      {/* 2. Target Resource Selector */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-slate-700 font-semibold">Select Specific Unit ({candidateResources.length} matching)</label>
+          <label className="text-slate-700 font-semibold">Select Unit ({candidateResources.length} available)</label>
           {selectedResource && (
-            <span className="font-mono text-[11px] text-slate-500 font-medium">
-              Current: <StatusBadge status={selectedResource.status} size="xs" /> (v{selectedResource.version || 1})
+            <span className="text-[11px] text-slate-500 font-medium">
+              Current: <StatusBadge status={selectedResource.status} size="xs" />
             </span>
           )}
         </div>
@@ -222,7 +220,6 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
                 <div className="font-mono font-bold text-xs truncate">{res.id}</div>
                 <div className="flex items-center justify-between mt-1.5">
                   <StatusBadge status={res.status} size="xs" />
-                  <span className="text-[10px] text-slate-400 font-mono">v{res.version || 1}</span>
                 </div>
               </button>
             );
@@ -230,7 +227,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
         </div>
       </div>
 
-      {/* 3. Patient Assignment & Priority Tier */}
+      {/* 3. Patient Assignment & Urgency Level */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-slate-700 font-semibold mb-1">Patient</label>
@@ -239,7 +236,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
             onChange={(e) => setPatientId(e.target.value)}
             className="clean-input w-full"
           >
-            <option value="">-- Select Registered Patient --</option>
+            <option value="">-- Select Patient --</option>
             {patients.map((p) => (
               <option key={p.patientId} value={p.patientId}>
                 {p.name} ({p.age}y, {p.diagnosis || 'Admitted'})
@@ -258,27 +255,27 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
         </div>
 
         <div>
-          <label className="block text-slate-700 font-semibold mb-1">Priority Tier & Preemption Weight</label>
+          <label className="block text-slate-700 font-semibold mb-1">Urgency Level</label>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
             className="clean-input w-full font-mono font-medium"
           >
-            <option value="normal">NORMAL (Tier 1 - Standard)</option>
-            <option value="high">HIGH (Tier 2 - Urgent Procedure)</option>
-            <option value="urgent">URGENT (Tier 3 - Rapid Deterioration)</option>
-            <option value="critical">CRITICAL (Tier 4 - Emergency Preemption)</option>
+            <option value="normal">NORMAL (Standard Care)</option>
+            <option value="high">HIGH (Urgent Procedure)</option>
+            <option value="urgent">URGENT (Rapid Deterioration)</option>
+            <option value="critical">CRITICAL (Emergency Priority Override)</option>
           </select>
           <div className="text-[11px] text-slate-500 mt-1">
-            Higher tiers deterministically preempt lower tiers in conflict situations.
+            Critical requests can override lower-priority holds if needed.
           </div>
         </div>
       </div>
 
-      {/* 4. Clinical Reason & AI Urgency Advisor (Feature 2) */}
+      {/* 4. Clinical Reason & AI Suggestion */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-slate-700 font-semibold">Clinical Indication / Reason</label>
+          <label className="text-slate-700 font-semibold">Clinical Reason / Notes</label>
           <button
             type="button"
             onClick={() => handleAiUrgencyCheck()}
@@ -286,7 +283,7 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
             className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            {isAnalyzingAi ? 'Analyzing AI...' : 'AI Urgency Check'}
+            {isAnalyzingAi ? 'Analyzing...' : 'AI Urgency Check'}
           </button>
         </div>
         <textarea
@@ -294,19 +291,18 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           onBlur={() => handleAiUrgencyCheck()}
-          placeholder="e.g. Patient developed acute chest pain, ST elevation on telemetry, requires urgent cardiac ICU monitoring..."
+          placeholder="e.g. Patient has acute respiratory distress, requires urgent ICU bed and continuous monitoring..."
           className="clean-input w-full text-xs"
         />
 
-        {/* AI Advisory Urgency Score Display */}
         {aiUrgency && (
           <div className="mt-2.5 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-2.5 text-[11px]">
             <Sparkles className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">AI Suggested Urgency:</span>
+                <span className="font-bold text-slate-900">AI Suggestion:</span>
                 <StatusBadge status={aiUrgency.suggestedPriority} size="xs" />
-                <span className="font-mono text-slate-500 font-medium">({Math.round(aiUrgency.confidence * 100)}% match)</span>
+                <span className="font-mono text-slate-500 font-medium">({Math.round(aiUrgency.confidence * 100)}% confidence)</span>
               </div>
               <p className="text-slate-600 mt-1">{aiUrgency.clinicalRationale}</p>
             </div>
@@ -341,12 +337,12 @@ export default function RequestResourceForm({ initialParsedData = null, onSucces
         {submitting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Executing Atomic Transaction...
+            Confirming Allocation...
           </>
         ) : (
           <>
-            <ShieldCheck className="w-4 h-4" />
-            Commit Resource Transaction (runTransaction)
+            <CheckCircle2 className="w-4 h-4" />
+            Confirm Request
           </>
         )}
       </button>

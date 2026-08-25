@@ -76,12 +76,111 @@ export const SEED_DATA = {
   ],
 
   patients: [
-    { patientId: 'pat-1', name: 'Ramesh Gupta', age: 54, gender: 'Male', diagnosis: 'Bacterial Pneumonia with Mild Hypoxemia', currentBedId: 'G-101', assignedDoctorId: 'doc-3', assignedDoctorName: 'Dr. Priya Nair', status: 'admitted', vitals: { hr: 82, bp: '124/80', spo2: 96, temp: '99.1 F' } },
-    { patientId: 'pat-2', name: 'Sunita Devi', age: 62, gender: 'Female', diagnosis: 'Acute Respiratory Distress Syndrome (ARDS)', currentBedId: 'ICU-201', assignedDoctorId: 'doc-7', assignedDoctorName: 'Dr. Sneha Kulkarni', status: 'critical', vitals: { hr: 110, bp: '95/60', spo2: 91, temp: '101.4 F' } },
-    { patientId: 'pat-3', name: 'Rajesh Verma', age: 48, gender: 'Male', diagnosis: 'Acute Coronary Syndrome / Post-MI', currentBedId: 'ICU-202', assignedDoctorId: 'doc-1', assignedDoctorName: 'Dr. Ananya Sharma', status: 'critical', vitals: { hr: 98, bp: '140/92', spo2: 95, temp: '98.6 F' } },
-    { patientId: 'pat-4', name: 'Meenakshi Sundaram', age: 39, gender: 'Female', diagnosis: 'Multiple Contusions & Observation', currentBedId: 'E-01', assignedDoctorId: 'doc-4', assignedDoctorName: 'Dr. Vikram Rao', status: 'emergency', vitals: { hr: 76, bp: '118/74', spo2: 99, temp: '98.4 F' } },
-    { patientId: 'pat-5', name: 'Arvind Patel', age: 67, gender: 'Male', diagnosis: 'Right Femur Fracture Post-Fixation', currentBedId: 'G-105', assignedDoctorId: 'doc-2', assignedDoctorName: 'Dr. Rohan Deshmukh', status: 'admitted', vitals: { hr: 74, bp: '130/84', spo2: 98, temp: '98.8 F' } },
-    { patientId: 'pat-6', name: 'Fatima Khan', age: 45, gender: 'Female', diagnosis: 'Post-Cholecystectomy Sepsis Monitoring', currentBedId: 'ICU-203', assignedDoctorId: 'doc-6', assignedDoctorName: 'Dr. Arjun Mehta', status: 'critical', vitals: { hr: 104, bp: '100/68', spo2: 94, temp: '100.2 F' } }
+    {
+      patientId: 'pat-1',
+      name: 'Ramesh Gupta',
+      age: 54,
+      gender: 'Male',
+      phone: '+91 98201 44521',
+      diagnosis: 'Bacterial Pneumonia with Mild Hypoxemia',
+      currentBedId: 'G-101',
+      assignedDoctorId: 'doc-3',
+      assignedDoctorName: 'Dr. Priya Nair',
+      status: 'admitted',
+      admittedAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+      vitals: { hr: 82, bp: '124/80', spo2: 96, temp: '99.1 F' },
+      documents: [
+        { id: 'doc-101', name: 'Chest_XRay_PA_View.pdf', type: 'application/pdf', size: '2.4 MB', uploadedAt: new Date(Date.now() - 22 * 3600000).toISOString(), uploadedBy: 'Radiology Dept', notes: 'Right lower lobe consolidation noted.' },
+        { id: 'doc-102', name: 'CBC_Blood_Panel.pdf', type: 'application/pdf', size: '1.1 MB', uploadedAt: new Date(Date.now() - 20 * 3600000).toISOString(), uploadedBy: 'Central Lab', notes: 'Elevated WBC count (14,200/mcL).' }
+      ]
+    },
+    {
+      patientId: 'pat-2',
+      name: 'Sunita Devi',
+      age: 62,
+      gender: 'Female',
+      phone: '+91 98190 88231',
+      diagnosis: 'Acute Respiratory Distress Syndrome (ARDS)',
+      currentBedId: 'ICU-201',
+      assignedDoctorId: 'doc-7',
+      assignedDoctorName: 'Dr. Sneha Kulkarni',
+      status: 'critical',
+      admittedAt: new Date(Date.now() - 18 * 3600000).toISOString(),
+      vitals: { hr: 110, bp: '95/60', spo2: 91, temp: '101.4 F' },
+      documents: [
+        { id: 'doc-201', name: 'Arterial_Blood_Gas_ABG.pdf', type: 'application/pdf', size: '850 KB', uploadedAt: new Date(Date.now() - 16 * 3600000).toISOString(), uploadedBy: 'ICU Lab Tech', notes: 'PaO2/FiO2 ratio: 180 mmHg (Moderate ARDS).' },
+        { id: 'doc-202', name: 'HRCT_Thorax_Scan.pdf', type: 'application/pdf', size: '4.2 MB', uploadedAt: new Date(Date.now() - 14 * 3600000).toISOString(), uploadedBy: 'Radiology Dept', notes: 'Bilateral ground-glass opacities.' }
+      ]
+    },
+    {
+      patientId: 'pat-3',
+      name: 'Rajesh Verma',
+      age: 48,
+      gender: 'Male',
+      phone: '+91 97690 11982',
+      diagnosis: 'Acute Coronary Syndrome / Post-MI',
+      currentBedId: 'ICU-202',
+      assignedDoctorId: 'doc-1',
+      assignedDoctorName: 'Dr. Ananya Sharma',
+      status: 'critical',
+      admittedAt: new Date(Date.now() - 6 * 3600000).toISOString(),
+      vitals: { hr: 98, bp: '140/92', spo2: 95, temp: '98.6 F' },
+      documents: [
+        { id: 'doc-301', name: '12_Lead_ECG_Report.pdf', type: 'application/pdf', size: '1.6 MB', uploadedAt: new Date(Date.now() - 5 * 3600000).toISOString(), uploadedBy: 'Emergency Triage', notes: 'ST-segment elevation in leads V1-V4.' },
+        { id: 'doc-302', name: 'Cardiac_Enzymes_TroponinI.pdf', type: 'application/pdf', size: '640 KB', uploadedAt: new Date(Date.now() - 4 * 3600000).toISOString(), uploadedBy: 'Biochemistry Lab', notes: 'High-sensitivity Troponin-I: 1.84 ng/mL.' }
+      ]
+    },
+    {
+      patientId: 'pat-4',
+      name: 'Meenakshi Sundaram',
+      age: 39,
+      gender: 'Female',
+      phone: '+91 99204 77123',
+      diagnosis: 'Multiple Contusions & Observation',
+      currentBedId: 'E-01',
+      assignedDoctorId: 'doc-4',
+      assignedDoctorName: 'Dr. Vikram Rao',
+      status: 'emergency',
+      admittedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+      vitals: { hr: 76, bp: '118/74', spo2: 99, temp: '98.4 F' },
+      documents: [
+        { id: 'doc-401', name: 'Whole_Body_Trauma_CT.pdf', type: 'application/pdf', size: '3.8 MB', uploadedAt: new Date(Date.now() - 90 * 60000).toISOString(), uploadedBy: 'Trauma Team', notes: 'No intracranial hemorrhage or visceral injury.' }
+      ]
+    },
+    {
+      patientId: 'pat-5',
+      name: 'Arvind Patel',
+      age: 67,
+      gender: 'Male',
+      phone: '+91 98450 33219',
+      diagnosis: 'Right Femur Fracture Post-Fixation',
+      currentBedId: 'G-105',
+      assignedDoctorId: 'doc-2',
+      assignedDoctorName: 'Dr. Rohan Deshmukh',
+      status: 'admitted',
+      admittedAt: new Date(Date.now() - 12 * 3600000).toISOString(),
+      vitals: { hr: 74, bp: '130/84', spo2: 98, temp: '98.8 F' },
+      documents: [
+        { id: 'doc-501', name: 'PostOp_Orthopedic_XRay.pdf', type: 'application/pdf', size: '2.1 MB', uploadedAt: new Date(Date.now() - 8 * 3600000).toISOString(), uploadedBy: 'Orthopedic Ward', notes: 'Intramedullary nail in anatomical alignment.' }
+      ]
+    },
+    {
+      patientId: 'pat-6',
+      name: 'Fatima Khan',
+      age: 45,
+      gender: 'Female',
+      phone: '+91 98330 66541',
+      diagnosis: 'Post-Cholecystectomy Sepsis Monitoring',
+      currentBedId: 'ICU-203',
+      assignedDoctorId: 'doc-6',
+      assignedDoctorName: 'Dr. Arjun Mehta',
+      status: 'critical',
+      admittedAt: new Date(Date.now() - 36 * 3600000).toISOString(),
+      vitals: { hr: 104, bp: '100/68', spo2: 94, temp: '100.2 F' },
+      documents: [
+        { id: 'doc-601', name: 'Blood_Culture_Sensitivity.pdf', type: 'application/pdf', size: '1.2 MB', uploadedAt: new Date(Date.now() - 12 * 3600000).toISOString(), uploadedBy: 'Microbiology', notes: 'Gram-negative bacillus isolated; sensitive to Meropenem.' }
+      ]
+    }
   ]
 };
 

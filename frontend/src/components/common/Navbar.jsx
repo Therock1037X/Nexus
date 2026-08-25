@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
 import {
   Menu,
-  Activity,
   Sparkles,
   Volume2,
   VolumeX,
   RotateCcw,
   Building,
   ShieldAlert,
-  SlidersHorizontal,
-  Layers
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useHospital } from '../../context/HospitalContext.jsx';
 import AISettingsModal from './AISettingsModal.jsx';
+import AdmitPatientModal from './AdmitPatientModal.jsx';
 
 export default function Navbar({ onToggleSidebar }) {
   const { currentUser, role } = useAuth();
   const { stats, isSeeding, handleResetSeed, soundEnabled, setSoundEnabled } = useHospital();
   const [showAiModal, setShowAiModal] = useState(false);
+  const [showAdmitModal, setShowAdmitModal] = useState(false);
 
   return (
     <>
       <header className="h-16 bg-white border-b border-slate-200/80 px-4 lg:px-8 flex items-center justify-between shadow-clean flex-shrink-0">
-        {/* Left: Mobile Toggle & Location Context */}
+        {/* Left: Mobile Toggle & Hospital Location Context */}
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}
@@ -39,8 +39,9 @@ export default function Navbar({ onToggleSidebar }) {
               <span className="text-slate-400">•</span>
               <span className="text-slate-500 font-normal">Level-1 Trauma & Surgical Wing</span>
             </div>
-            <span className="hidden md:inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              OCC & RTS ACTIVE
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+              Live
             </span>
           </div>
         </div>
@@ -63,20 +64,30 @@ export default function Navbar({ onToggleSidebar }) {
           </div>
 
           <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
-            <span className="text-slate-500 font-sans">ACTIVE SAGAS:</span>
-            <span className="font-bold text-purple-600">{stats.inProgressSagasCount} Running</span>
+            <span className="text-slate-500 font-sans">PRESCRIPTIONS:</span>
+            <span className="font-bold text-purple-600">{stats.inProgressSagasCount} Active</span>
           </div>
 
           {stats.conflictsCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold animate-pulse">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold">
               <ShieldAlert className="w-3.5 h-3.5" />
-              <span>{stats.conflictsCount} OCC CONFLICTS</span>
+              <span>{stats.conflictsCount} Overrides Logged</span>
             </div>
           )}
         </div>
 
         {/* Right: Actions & Modals */}
         <div className="flex items-center gap-2.5">
+          {/* 1-Click Admit Patient Action */}
+          <button
+            onClick={() => setShowAdmitModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs transition-all"
+            title="Admit a new patient from OPD / Reception"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Admit Patient</span>
+          </button>
+
           {/* Audio Ping Mute/Unmute */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
@@ -101,16 +112,17 @@ export default function Navbar({ onToggleSidebar }) {
             onClick={handleResetSeed}
             disabled={isSeeding}
             title="Reset hospital demo data to default clean state"
-            className="btn-primary text-xs px-3 py-1.5"
+            className="btn-secondary text-xs px-3 py-1.5 font-bold"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${isSeeding ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isSeeding ? 'Seeding...' : 'Reset Demo'}</span>
+            <span className="hidden sm:inline">{isSeeding ? 'Resetting...' : 'Reset Demo'}</span>
           </button>
         </div>
       </header>
 
-      {/* AI Settings Modal */}
+      {/* Modals */}
       <AISettingsModal isOpen={showAiModal} onClose={() => setShowAiModal(false)} />
+      <AdmitPatientModal isOpen={showAdmitModal} onClose={() => setShowAdmitModal(false)} />
     </>
   );
 }
