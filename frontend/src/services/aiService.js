@@ -9,6 +9,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { apiClient } from './apiClient.js';
 
 const LOCAL_KEY_STORAGE = 'nexus_gemini_api_key';
 
@@ -45,6 +46,14 @@ async function callGeminiPrompt(prompt, modelName = 'gemini-1.5-flash') {
  */
 export async function explainAuditEvents(events = []) {
   if (!events || events.length === 0) return 'No audit events to summarize.';
+
+  // 1. Try Backend API
+  try {
+    const summary = await apiClient.explainAuditTrail(events);
+    if (summary) return summary;
+  } catch (err) {
+    console.warn('[AI Service] Backend explain fell back to client:', err.message);
+  }
 
   const prompt = `You are a Chief Medical Information Officer (CMIO) and Clinical Systems Auditor.
 Summarize the following chronological sequence of hospital resource transaction events into a concise, factual, plain-English operational narrative (2-3 sentences).
@@ -87,6 +96,14 @@ export async function suggestPriorityFromNotes(clinicalReason = '') {
       confidence: 0.5,
       clinicalRationale: 'Standard triage applied (no notes provided).'
     };
+  }
+
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.suggestPriority(clinicalReason);
+    if (res?.suggestedPriority) return res;
+  } catch (err) {
+    console.warn('[AI Service] Backend priority suggestion fell back to client:', err.message);
   }
 
   const prompt = `You are a Senior Triage AI Assistant in a Hospital Command Center.
@@ -162,6 +179,14 @@ Output ONLY a valid JSON object:
  */
 export async function parseNaturalLanguageRequest(naturalText = '') {
   if (!naturalText || !naturalText.trim()) return null;
+
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.parseNaturalRequest(naturalText);
+    if (res?.resourceType) return res;
+  } catch (err) {
+    console.warn('[AI Service] Backend NLP parser fell back to client:', err.message);
+  }
 
   const prompt = `You are a Medical NLP parser. Convert the doctor's unstructured request into a structured JSON object.
 

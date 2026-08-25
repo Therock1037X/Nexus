@@ -18,6 +18,7 @@ import {
   getResourceDocRef,
   getEventsCollectionRef
 } from '../firebase/firestore.js';
+import { apiClient } from './apiClient.js';
 
 // Deterministic Priority Weights
 export const PRIORITY_TIERS = {
@@ -101,6 +102,36 @@ export async function allocateResourceTransaction({
   idempotencyKey = `alloc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
   aiSuggestedPriority = null
 }) {
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.allocateResource({
+      resourceId,
+      actorId,
+      actorName,
+      actorRole,
+      patientId,
+      patientName,
+      allocationType,
+      priority,
+      reason,
+      idempotencyKey,
+      aiSuggestedPriority
+    });
+    if (res?.success) {
+      if (res.resource) {
+        const resources = getLocalStore(LOCAL_STORAGE_RESOURCES_KEY, []);
+        const idx = resources.findIndex(r => r.id === res.resource.id);
+        if (idx >= 0) resources[idx] = res.resource;
+        else resources.push(res.resource);
+        setLocalStore(LOCAL_STORAGE_RESOURCES_KEY, resources);
+      }
+      return res;
+    }
+  } catch (apiErr) {
+    if (apiErr.code === 'RESOURCE_CONFLICT') throw apiErr;
+    console.warn('[TRANSACTION] Backend allocate call fell back to client:', apiErr.message);
+  }
+
   const resourceRef = getResourceDocRef(resourceId, hospitalId);
   const eventsRef = getEventsCollectionRef(hospitalId);
 

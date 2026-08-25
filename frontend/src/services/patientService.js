@@ -1,6 +1,7 @@
 /**
  * Patient Service
  * Handles patient intake (OPD/Reception), doctor reassignment, and document uploads.
+ * Connects directly to the backend API with seamless client-side fallback.
  */
 
 import {
@@ -10,6 +11,7 @@ import {
   updateDoc,
   DEFAULT_HOSPITAL_ID
 } from '../firebase/firestore.js';
+import { apiClient } from './apiClient.js';
 
 /**
  * Admit a new patient from OPD / Reception
@@ -32,10 +34,34 @@ export async function admitNewPatient({
     throw new Error('Patient name and assigned doctor are required.');
   }
 
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.admitPatient({
+      name,
+      age,
+      gender,
+      phone,
+      reason,
+      diagnosis,
+      assignedDoctorId,
+      assignedDoctorName,
+      priority,
+      documents,
+      admittedBy
+    });
+    if (res?.patient) {
+      // Sync local reactive store
+      syncLocalPatient(res.patient);
+      return res.patient;
+    }
+  } catch (apiErr) {
+    console.warn('[PATIENT SERVICE] Backend API unavailable, continuing with client store:', apiErr.message);
+  }
+
+  // 2. Client-side Fallback
   const patientId = `pat-${Date.now().toString().slice(-6)}`;
   const timestamp = new Date().toISOString();
 
-  // Create sample default document if none attached
   const initialDocs = documents.length > 0 ? documents : [
     {
       id: `doc-${Date.now()}-1`,
@@ -70,7 +96,6 @@ export async function admitNewPatient({
     }
   };
 
-  // 1. Audit Log Event (in plain, human-friendly language)
   const eventId = `evt-admit-${Date.now()}`;
   const admitEvent = {
     id: eventId,
@@ -93,32 +118,40 @@ export async function admitNewPatient({
     }
   };
 
-  // 2. Write to Firestore
   try {
     await setDoc(doc(db, 'hospitals', hospitalId, 'patients', patientId), newPatient);
     await setDoc(doc(db, 'hospitals', hospitalId, 'events', eventId), admitEvent);
   } catch (err) {
-    console.warn('[PATIENT SERVICE] Firestore write failed; syncing local store:', err.message);
+    console.warn('[PATIENT SERVICE] Firestore write note:', err.message);
   }
 
-  // 3. Update Local Storage for Instant Reactivity
+  syncLocalPatient(newPatient, admitEvent);
+  return newPatient;
+}
+
+function syncLocalPatient(patient, event = null) {
   try {
     const rawPatients = localStorage.getItem('nexus_local_patients');
     const patients = rawPatients ? JSON.parse(rawPatients) : [];
-    patients.unshift(newPatient);
+    const existingIdx = patients.findIndex(p => p.patientId === patient.patientId);
+    if (existingIdx >= 0) {
+      patients[existingIdx] = patient;
+    } else {
+      patients.unshift(patient);
+    }
     localStorage.setItem('nexus_local_patients', JSON.stringify(patients));
 
-    const rawEvents = localStorage.getItem('nexus_local_events');
-    const events = rawEvents ? JSON.parse(rawEvents) : [];
-    events.unshift(admitEvent);
-    localStorage.setItem('nexus_local_events', JSON.stringify(events));
+    if (event) {
+      const rawEvents = localStorage.getItem('nexus_local_events');
+      const events = rawEvents ? JSON.parse(rawEvents) : [];
+      events.unshift(event);
+      localStorage.setItem('nexus_local_events', JSON.stringify(events));
+    }
 
     window.dispatchEvent(new CustomEvent('nexus_store_updated', { detail: { key: 'patients' } }));
   } catch (err) {
     console.warn('[PATIENT SERVICE] Local store write error:', err);
   }
-
-  return newPatient;
 }
 
 /**
@@ -131,8 +164,22 @@ export async function reassignPatientDoctor({
   reassignedBy = 'Attending Doctor',
   hospitalId = DEFAULT_HOSPITAL_ID
 }) {
-  const timestamp = new Date().toISOString();
+  try {
+    const res = await apiClient.reassignPatient({
+      patientId,
+      newDoctorId,
+      newDoctorName,
+      reassignedBy
+    });
+    if (res?.patient) {
+      syncLocalPatient(res.patient);
+      return res;
+    }
+  } catch (err) {
+    console.warn('[PATIENT SERVICE] Backend reassign note:', err.message);
+  }
 
+  const timestamp = new Date().toISOString();
   const eventId = `evt-reassign-${Date.now()}`;
   const reassignEvent = {
     id: eventId,
@@ -153,7 +200,6 @@ export async function reassignPatientDoctor({
     }
   };
 
-  // Update Firestore
   try {
     const patientRef = doc(db, 'hospitals', hospitalId, 'patients', patientId);
     await updateDoc(patientRef, {
@@ -162,11 +208,8 @@ export async function reassignPatientDoctor({
       lastReassignedAt: timestamp
     }).catch(() => {});
     await setDoc(doc(db, 'hospitals', hospitalId, 'events', eventId), reassignEvent).catch(() => {});
-  } catch (err) {
-    console.warn('[PATIENT SERVICE] Firestore update error:', err);
-  }
+  } catch {}
 
-  // Update Local Storage
   try {
     const rawPatients = localStorage.getItem('nexus_local_patients');
     if (rawPatients) {
@@ -186,9 +229,7 @@ export async function reassignPatientDoctor({
     localStorage.setItem('nexus_local_events', JSON.stringify(events));
 
     window.dispatchEvent(new CustomEvent('nexus_store_updated', { detail: { key: 'patients' } }));
-  } catch (err) {
-    console.warn('[PATIENT SERVICE] Local update error:', err);
-  }
+  } catch {}
 
   return { success: true, patientId, newDoctorId, newDoctorName };
 }
@@ -202,6 +243,16 @@ export async function attachPatientDocument({
   uploadedBy = 'Clinician',
   hospitalId = DEFAULT_HOSPITAL_ID
 }) {
+  try {
+    const res = await apiClient.attachDocument({ patientId, document, uploadedBy });
+    if (res?.document && res?.patient) {
+      syncLocalPatient(res.patient);
+      return res.document;
+    }
+  } catch (err) {
+    console.warn('[PATIENT SERVICE] Backend document upload note:', err.message);
+  }
+
   const timestamp = new Date().toISOString();
   const docObj = {
     id: `doc-${Date.now()}`,
@@ -232,7 +283,6 @@ export async function attachPatientDocument({
     }
   };
 
-  // Update Local Storage
   try {
     const rawPatients = localStorage.getItem('nexus_local_patients');
     if (rawPatients) {
@@ -251,11 +301,8 @@ export async function attachPatientDocument({
     localStorage.setItem('nexus_local_events', JSON.stringify(events));
 
     window.dispatchEvent(new CustomEvent('nexus_store_updated', { detail: { key: 'patients' } }));
-  } catch (err) {
-    console.warn('[PATIENT SERVICE] Local doc update error:', err);
-  }
+  } catch {}
 
-  // Update Firestore
   try {
     await setDoc(doc(db, 'hospitals', hospitalId, 'events', eventId), docEvent).catch(() => {});
   } catch {}

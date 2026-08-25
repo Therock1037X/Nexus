@@ -22,6 +22,7 @@ import {
   getSagasCollectionRef,
   getEventsCollectionRef
 } from '../firebase/firestore.js';
+import { apiClient } from './apiClient.js';
 
 const LOCAL_SAGAS_KEY = 'nexus_local_sagas';
 const LOCAL_RESOURCES_KEY = 'nexus_local_resources';
@@ -61,6 +62,32 @@ export async function startPrescriptionSaga({
   notes = '',
   idempotencyKey = `saga-rx-${Date.now()}`
 }) {
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.startPrescriptionSaga({
+      patientId,
+      patientName,
+      medicineId,
+      medicineName,
+      dosage,
+      quantity,
+      doctorId,
+      doctorName,
+      notes,
+      idempotencyKey
+    });
+    if (res?.success) {
+      if (res.saga) {
+        const sagas = getLocalStore(LOCAL_SAGAS_KEY, []);
+        sagas.unshift(res.saga);
+        setLocalStore(LOCAL_SAGAS_KEY, sagas);
+      }
+      return res;
+    }
+  } catch (apiErr) {
+    console.warn('[SAGA] Backend start prescription fell back to client:', apiErr.message);
+  }
+
   const medicineRef = getResourceDocRef(medicineId, hospitalId);
   const sagasRef = getSagasCollectionRef(hospitalId);
   const eventsRef = getEventsCollectionRef(hospitalId);
@@ -250,6 +277,30 @@ export async function advancePrescriptionStep({
   details = '',
   clinicalVitals = null
 }) {
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.advancePrescriptionSaga({
+      sagaId,
+      stepName,
+      actorId,
+      actorName,
+      actorRole,
+      details,
+      clinicalVitals
+    });
+    if (res?.success) {
+      if (res.saga) {
+        const sagas = getLocalStore(LOCAL_SAGAS_KEY, []);
+        const idx = sagas.findIndex(s => s.id === sagaId);
+        if (idx >= 0) sagas[idx] = res.saga;
+        setLocalStore(LOCAL_SAGAS_KEY, sagas);
+      }
+      return res;
+    }
+  } catch (apiErr) {
+    console.warn('[SAGA] Backend advance step fell back to client:', apiErr.message);
+  }
+
   const sagaRef = doc(db, 'hospitals', hospitalId, 'sagas', sagaId);
   const eventsRef = getEventsCollectionRef(hospitalId);
 
@@ -359,6 +410,28 @@ export async function compensateSaga({
   actorRole,
   reason = 'Patient allergic reaction or clinician abort'
 }) {
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.compensatePrescriptionSaga({
+      sagaId,
+      actorId,
+      actorName,
+      actorRole,
+      reason
+    });
+    if (res?.success) {
+      if (res.saga) {
+        const sagas = getLocalStore(LOCAL_SAGAS_KEY, []);
+        const idx = sagas.findIndex(s => s.id === sagaId);
+        if (idx >= 0) sagas[idx] = res.saga;
+        setLocalStore(LOCAL_SAGAS_KEY, sagas);
+      }
+      return res;
+    }
+  } catch (apiErr) {
+    console.warn('[SAGA] Backend compensation fell back to client:', apiErr.message);
+  }
+
   const sagaRef = doc(db, 'hospitals', hospitalId, 'sagas', sagaId);
   const eventsRef = getEventsCollectionRef(hospitalId);
 
