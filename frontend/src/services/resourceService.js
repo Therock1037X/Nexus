@@ -12,6 +12,7 @@ import {
   db,
   doc,
   collection,
+  setDoc,
   runTransaction,
   serverTimestamp,
   DEFAULT_HOSPITAL_ID,
@@ -184,8 +185,7 @@ export async function allocateResourceTransaction({
       // Step 3: Handle Rejection
       if (!canProceed) {
         const rejectId = `evt-reject-${Date.now()}`;
-        const rejectRef = doc(eventsRef, rejectId);
-        t.set(rejectRef, {
+        const rejectEventData = {
           id: rejectId,
           type: 'conflict_rejected',
           resourceId,
@@ -204,7 +204,20 @@ export async function allocateResourceTransaction({
             rejectionReason: conflictReason,
             existingAllocation: currentAlloc
           }
-        });
+        };
+
+        // Write directly to Firestore outside transaction to guarantee persistence
+        try {
+          const rejectRef = doc(eventsRef, rejectId);
+          setDoc(rejectRef, rejectEventData).catch(console.warn);
+        } catch (writeErr) {
+          console.warn('[AUDIT] Failed to async write rejectDoc:', writeErr);
+        }
+
+        // Also push to local store for instant local reactivity
+        const localEvents = getLocalStore(LOCAL_STORAGE_EVENTS_KEY, []);
+        localEvents.unshift(rejectEventData);
+        setLocalStore(LOCAL_STORAGE_EVENTS_KEY, localEvents);
 
         const conflictError = new Error(conflictReason);
         conflictError.code = 'RESOURCE_CONFLICT';

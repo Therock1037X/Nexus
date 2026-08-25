@@ -330,26 +330,60 @@ class HospitalStateStore {
 
     this.events = [
       {
-        id: 'evt-init-01',
-        type: 'patient_admitted',
-        resourceId: 'G-101',
-        actorId: 'doc-3',
-        actorName: 'Dr. Priya Nair',
+        id: 'evt-preempt-demo-01',
+        type: 'escalation_preemption',
+        resourceId: 'ICU-202',
+        actorId: 'doc-1',
+        actorName: 'Dr. Ananya Sharma',
         actorRole: 'doctor',
-        timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-        resultingVersion: 1,
-        payload: { patientName: 'Ramesh Gupta', diagnosis: 'Bacterial Pneumonia' }
+        timestamp: new Date(Date.now() - 35 * 60000).toISOString(),
+        idempotencyKey: 'idemp-preempt-01',
+        resultingVersion: 2,
+        payload: {
+          action: 'Emergency Priority Override',
+          reason: 'Incoming CRITICAL patient (Rajesh Verma) prioritized over routine hold.',
+          overridePriority: 'critical',
+          overridingPatientName: 'Rajesh Verma',
+          preemptedPatientName: 'Arvind Patel',
+          aiSuggestedPriority: 'critical'
+        }
       },
       {
-        id: 'evt-init-02',
-        type: 'allocate',
+        id: 'evt-conflict-demo-02',
+        type: 'conflict_rejected',
         resourceId: 'ICU-201',
         actorId: 'doc-7',
         actorName: 'Dr. Sneha Kulkarni',
         actorRole: 'doctor',
-        timestamp: new Date(Date.now() - 18 * 3600000).toISOString(),
+        timestamp: new Date(Date.now() - 48 * 60000).toISOString(),
+        idempotencyKey: 'idemp-reject-02',
         resultingVersion: 1,
-        payload: { patientName: 'Sunita Devi', priority: 'critical', reason: 'ARDS on Ventilator' }
+        payload: {
+          action: 'Request Declined',
+          requestedStatus: 'occupied',
+          requestedPriority: 'high',
+          aiSuggestedPriority: 'high',
+          patientName: 'Meenakshi Sundaram',
+          rejectionReason: 'Not available: This bed is currently assigned to a higher-urgency emergency patient (Sunita Devi in acute ARDS).'
+        }
+      },
+      {
+        id: 'evt-alloc-demo-03',
+        type: 'allocate',
+        resourceId: 'G-101',
+        actorId: 'doc-1',
+        actorName: 'Dr. Ananya Sharma',
+        actorRole: 'doctor',
+        timestamp: new Date(Date.now() - 60 * 60000).toISOString(),
+        idempotencyKey: 'idemp-alloc-03',
+        resultingVersion: 1,
+        payload: {
+          action: 'Bed Assigned',
+          patientId: 'pat-1',
+          patientName: 'Ramesh Gupta',
+          priority: 'normal',
+          reason: 'Bacterial pneumonia admission from OPD'
+        }
       }
     ];
   }

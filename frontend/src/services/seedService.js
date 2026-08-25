@@ -340,6 +340,65 @@ export const INITIAL_SAGAS = [
   }
 ];
 
+export const INITIAL_EVENTS = [
+  {
+    id: 'evt-preempt-demo-01',
+    type: 'escalation_preemption',
+    resourceId: 'ICU-202',
+    actorId: 'doc-1',
+    actorName: 'Dr. Ananya Sharma',
+    actorRole: 'doctor',
+    timestamp: new Date(Date.now() - 35 * 60000).toISOString(),
+    idempotencyKey: 'idemp-preempt-01',
+    resultingVersion: 2,
+    payload: {
+      action: 'Emergency Priority Override',
+      reason: 'Incoming CRITICAL patient (Rajesh Verma) prioritized over routine hold.',
+      overridePriority: 'critical',
+      overridingPatientName: 'Rajesh Verma',
+      preemptedPatientName: 'Arvind Patel',
+      aiSuggestedPriority: 'critical'
+    }
+  },
+  {
+    id: 'evt-conflict-demo-02',
+    type: 'conflict_rejected',
+    resourceId: 'ICU-201',
+    actorId: 'doc-7',
+    actorName: 'Dr. Sneha Kulkarni',
+    actorRole: 'doctor',
+    timestamp: new Date(Date.now() - 48 * 60000).toISOString(),
+    idempotencyKey: 'idemp-reject-02',
+    resultingVersion: 1,
+    payload: {
+      action: 'Request Declined',
+      requestedStatus: 'occupied',
+      requestedPriority: 'high',
+      aiSuggestedPriority: 'high',
+      patientName: 'Meenakshi Sundaram',
+      rejectionReason: 'Not available: This bed is currently assigned to a higher-urgency emergency patient (Sunita Devi in acute ARDS).'
+    }
+  },
+  {
+    id: 'evt-alloc-demo-03',
+    type: 'allocate',
+    resourceId: 'G-101',
+    actorId: 'doc-1',
+    actorName: 'Dr. Ananya Sharma',
+    actorRole: 'doctor',
+    timestamp: new Date(Date.now() - 60 * 60000).toISOString(),
+    idempotencyKey: 'idemp-alloc-03',
+    resultingVersion: 1,
+    payload: {
+      action: 'Bed Assigned',
+      patientId: 'pat-1',
+      patientName: 'Ramesh Gupta',
+      priority: 'normal',
+      reason: 'Bacterial pneumonia admission from OPD'
+    }
+  }
+];
+
 export async function seedDemoHospital(hospitalId = DEFAULT_HOSPITAL_ID) {
   const beds = generateDemoBeds();
   const allResources = [
@@ -360,33 +419,14 @@ export async function seedDemoHospital(hospitalId = DEFAULT_HOSPITAL_ID) {
   localStorage.setItem('nexus_local_patients', JSON.stringify(SEED_DATA.patients));
   localStorage.setItem('nexus_local_floors', JSON.stringify(SEED_DATA.floors));
   localStorage.setItem('nexus_local_sagas', JSON.stringify(INITIAL_SAGAS));
-
-  const initEvent = {
-    id: `evt-init-${Date.now()}`,
-    type: 'status_change',
-    resourceId: 'SYSTEM_REGISTRY',
-    actorId: 'admin-1',
-    actorRole: 'admin',
-    actorName: 'Hospital Admin Vinit',
-    timestamp: new Date().toISOString(),
-    idempotencyKey: `idemp-seed-${Date.now()}`,
-    resultingVersion: 1,
-    payload: {
-      action: 'SYSTEM_INITIALIZATION',
-      description: 'Hospital registry populated with 4 floors, 38 beds, 3 OTs, staff, equipment, and pharmacy inventory.',
-      floorsCount: SEED_DATA.floors.length,
-      resourcesCount: allResources.length,
-      staffCount: allStaff.length
-    }
-  };
-  localStorage.setItem('nexus_local_events', JSON.stringify([initEvent]));
+  localStorage.setItem('nexus_local_events', JSON.stringify(INITIAL_EVENTS));
 
   // Attempt Firestore Write
   try {
     const hospitalRef = doc(db, 'hospitals', hospitalId);
     await setDoc(hospitalRef, {
       hospitalId,
-      name: 'Apex City Hospital & Research Center',
+      name: 'St. Jude Memorial Hospital',
       tagline: 'Level 1 Trauma & Multi-Specialty Tertiary Care Center',
       totalBeds: 38,
       operatingTheatres: 3,
