@@ -305,3 +305,98 @@ Generate a concise JSON forecast predicting availability trends in next 1-2 hour
       : 'Maintain standard admission protocols; monitor emergency ward turnover.'
   };
 }
+
+/**
+ * Feature 5: Suggested Next Action Engine for Doctor
+ */
+export async function getSuggestedActionForDoctor({ doctorId = 'doc-1', doctorName = 'Dr. Ananya Sharma', patients = [], sagas = [], events = [] }) {
+  // 1. Try Backend API
+  try {
+    const res = await apiClient.getSuggestedAction(doctorId, doctorName, patients, sagas, events);
+    if (res?.actionSummary) return res;
+  } catch (err) {
+    console.warn('[AI Service] Backend suggested action fell back:', err.message);
+  }
+
+  // 2. Try Gemini Direct if API key available
+  const myPatients = patients.filter(p => p.assignedDoctorId === doctorId || p.assignedDoctorName === doctorName);
+  const myPatientIds = myPatients.map(p => p.patientId);
+  const mySagas = sagas.filter(s => s.doctorId === doctorId || myPatientIds.includes(s.patientId));
+  const pendingDispensed = mySagas.find(s => s.status === 'in_progress' && s.steps?.[1]?.status === 'done' && s.steps?.[2]?.status === 'pending');
+  const criticalPatient = myPatients.find(p => p.status === 'critical' && !p.currentBedId);
+  const recentRejection = events.find(e => e.type === 'conflict_rejected' && (e.actorId === doctorId || myPatientIds.includes(e.payload?.patientId)));
+
+  const prompt = `You are helping a busy doctor know what to check first in a hospital command center.
+Doctor: ${doctorName}
+Assigned Patients: ${myPatients.length}
+Pending Items Context:
+- Critical unallocated patients: ${criticalPatient ? criticalPatient.name : 'None'}
+- Prescriptions dispensed waiting delivery: ${pendingDispensed ? `${pendingDispensed.patientName} (${pendingDispensed.medicineName})` : 'None'}
+- Recent declined bed requests: ${recentRejection ? recentRejection.resourceId : 'None'}
+
+Pick the SINGLE most time-sensitive or important one and describe it in one short, plain sentence. If nothing needs attention, say so plainly. Do not use technical terms.`;
+
+  const apiResult = await callGeminiPrompt(prompt);
+  if (apiResult) {
+    const cleanSentence = apiResult.replace(/```/g, '').trim();
+    let targetTab = 'patients';
+    let urgencyLevel = 'normal';
+
+    if (pendingDispensed) {
+      targetTab = 'prescribe';
+      urgencyLevel = 'normal';
+    } else if (criticalPatient) {
+      targetTab = 'request';
+      urgencyLevel = 'critical';
+    } else if (recentRejection) {
+      targetTab = 'escalate';
+      urgencyLevel = 'urgent';
+    }
+
+    return {
+      actionSummary: cleanSentence,
+      targetTab,
+      urgencyLevel
+    };
+  }
+
+  // 3. Fallback smart rules
+  if (criticalPatient) {
+    return {
+      actionSummary: `${criticalPatient.name} is admitted with acute symptoms and is awaiting an ICU bed allocation.`,
+      targetTab: 'request',
+      urgencyLevel: 'critical'
+    };
+  }
+
+  if (pendingDispensed) {
+    return {
+      actionSummary: `${pendingDispensed.patientName}'s ${pendingDispensed.medicineName} was dispensed by Central Pharmacy and is ready for bedside administration.`,
+      targetTab: 'prescribe',
+      urgencyLevel: 'normal'
+    };
+  }
+
+  if (recentRejection) {
+    return {
+      actionSummary: `Your request for ${recentRejection.resourceId} was held for a higher-urgency emergency — select an alternative bed or request an override.`,
+      targetTab: 'escalate',
+      urgencyLevel: 'urgent'
+    };
+  }
+
+  if (myPatients.length > 0) {
+    return {
+      actionSummary: `All ${myPatients.length} of your assigned patients are stable with active orders on track — no urgent actions needed.`,
+      targetTab: 'patients',
+      urgencyLevel: 'info'
+    };
+  }
+
+  return {
+    actionSummary: 'No active patient alerts or pending orders at this time.',
+    targetTab: 'patients',
+    urgencyLevel: 'info'
+  };
+}
+

@@ -174,8 +174,8 @@ class HospitalStateStore {
         phone: '+91 98201 44521',
         diagnosis: 'Bacterial Pneumonia with Mild Hypoxemia',
         currentBedId: 'G-101',
-        assignedDoctorId: 'doc-3',
-        assignedDoctorName: 'Dr. Priya Nair',
+        assignedDoctorId: 'doc-1',
+        assignedDoctorName: 'Dr. Ananya Sharma',
         status: 'admitted',
         admittedAt: new Date(Date.now() - 24 * 3600000).toISOString(),
         vitals: { hr: 82, bp: '124/80', spo2: 96, temp: '99.1 F' },
@@ -1146,6 +1146,60 @@ app.post('/api/ai/explain', async (req, res) => {
     (sagas > 0 ? `${sagas} prescriptions were tracked through the pharmacy with inventory updated automatically.` : '');
 
   res.json({ summary: narrative });
+});
+
+app.post('/api/ai/suggested-action', async (req, res) => {
+  const { doctorId = 'doc-1', doctorName = 'Dr. Ananya Sharma', patients = [], sagas = [], events = [] } = req.body;
+
+  const myPatients = patients.length > 0
+    ? patients.filter(p => p.assignedDoctorId === doctorId || p.assignedDoctorName === doctorName)
+    : store.patients.filter(p => p.assignedDoctorId === doctorId || p.assignedDoctorName === doctorName);
+  
+  const myPatientIds = myPatients.map(p => p.patientId);
+  const mySagas = sagas.length > 0 ? sagas : store.sagas.filter(s => s.doctorId === doctorId || myPatientIds.includes(s.patientId));
+  const myEvents = events.length > 0 ? events : store.events;
+
+  const pendingDispensed = mySagas.find(s => s.status === 'in_progress' && s.steps?.[1]?.status === 'done' && s.steps?.[2]?.status === 'pending');
+  const criticalPatient = myPatients.find(p => p.status === 'critical' && !p.currentBedId);
+  const recentRejection = myEvents.find(e => e.type === 'conflict_rejected' && (e.actorId === doctorId || myPatientIds.includes(e.payload?.patientId)));
+
+  if (criticalPatient) {
+    return res.json({
+      actionSummary: `${criticalPatient.name} is admitted with acute symptoms and is awaiting an ICU bed allocation.`,
+      targetTab: 'request',
+      urgencyLevel: 'critical'
+    });
+  }
+
+  if (pendingDispensed) {
+    return res.json({
+      actionSummary: `${pendingDispensed.patientName}'s ${pendingDispensed.medicineName} was dispensed by Central Pharmacy and is ready for bedside administration.`,
+      targetTab: 'prescribe',
+      urgencyLevel: 'normal'
+    });
+  }
+
+  if (recentRejection) {
+    return res.json({
+      actionSummary: `Your request for ${recentRejection.resourceId} was held for a higher-priority case — select an alternative bed or request an override.`,
+      targetTab: 'escalate',
+      urgencyLevel: 'urgent'
+    });
+  }
+
+  if (myPatients.length > 0) {
+    return res.json({
+      actionSummary: `All ${myPatients.length} of your assigned patients are stable with active orders on track — no urgent actions needed.`,
+      targetTab: 'patients',
+      urgencyLevel: 'info'
+    });
+  }
+
+  return res.json({
+    actionSummary: 'No active patient alerts or pending orders at this time.',
+    targetTab: 'patients',
+    urgencyLevel: 'info'
+  });
 });
 
 // Start Server

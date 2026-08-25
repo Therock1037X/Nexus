@@ -108,6 +108,10 @@ class ApiClient {
     return res.summary;
   }
 
+  async getSuggestedAction(doctorId, doctorName, patients = [], sagas = [], events = []) {
+    return await this.post('/ai/suggested-action', { doctorId, doctorName, patients, sagas, events });
+  }
+
   // Telemetry & Stats
   async getResources() {
     return await this.get('/resources');

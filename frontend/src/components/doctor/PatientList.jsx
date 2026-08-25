@@ -28,10 +28,14 @@ export default function PatientList({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatientForProfile, setSelectedPatientForProfile] = useState(null);
 
-  // Filter patients
+  // Filter patients by doctor
   let displayPatients = patients;
-  if (viewFilter === 'my' && currentDoctorId) {
-    displayPatients = patients.filter(p => p.assignedDoctorId === currentDoctorId);
+  if (viewFilter === 'my') {
+    displayPatients = patients.filter(p =>
+      p.assignedDoctorId === currentDoctorId ||
+      p.assignedDoctorName?.toLowerCase() === currentDoctorName?.toLowerCase() ||
+      (!p.assignedDoctorId && currentDoctorId === 'doc-1')
+    );
   }
 
   if (searchTerm.trim()) {
@@ -44,9 +48,15 @@ export default function PatientList({
     );
   }
 
+  const myPatientsCount = patients.filter(p =>
+    p.assignedDoctorId === currentDoctorId ||
+    p.assignedDoctorName?.toLowerCase() === currentDoctorName?.toLowerCase() ||
+    (!p.assignedDoctorId && currentDoctorId === 'doc-1')
+  ).length;
+
   return (
     <div className="space-y-4">
-      {/* Control Bar: View Toggle (My Patients vs All Patients), Search, and Admit Action */}
+      {/* Control Bar: View Toggle (My Patients vs All Patients) & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs">
         {/* Toggle Pills: My Patients vs All Patients */}
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
@@ -59,7 +69,7 @@ export default function PatientList({
             }`}
           >
             <Stethoscope className="w-3.5 h-3.5" />
-            <span>My Patients ({patients.filter(p => p.assignedDoctorId === currentDoctorId).length})</span>
+            <span>My Patients ({myPatientsCount})</span>
           </button>
 
           <button
@@ -75,28 +85,16 @@ export default function PatientList({
           </button>
         </div>
 
-        {/* Search & Admit Button */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex-1 sm:w-64">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by patient, diagnosis..."
-              className="clean-input w-full pl-8 py-1.5 text-xs"
-            />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-          </div>
-
-          {onAdmit && (
-            <button
-              onClick={onAdmit}
-              className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold whitespace-nowrap"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Admit Patient</span>
-            </button>
-          )}
+        {/* Search */}
+        <div className="relative flex-1 sm:w-64">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by patient, diagnosis..."
+            className="clean-input w-full pl-8 py-1.5 text-xs"
+          />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
         </div>
       </div>
 

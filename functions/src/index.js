@@ -32,6 +32,7 @@ import { explainActivity } from './ai/explainActivity.js';
 import { suggestUrgency } from './ai/suggestUrgency.js';
 import { parseRequest } from './ai/parseRequest.js';
 import { predictAvailability } from './ai/predictAvailability.js';
+import { getSuggestedAction } from './ai/suggestedAction.js';
 
 // ==========================================
 // CALLABLE FUNCTIONS
@@ -92,6 +93,11 @@ export const parseRequestCall = onCall(async (request) => {
 export const predictAvailabilityCall = onCall(async (request) => {
   const { resources, events, hospitalId = 'default-hospital' } = request.data;
   return await predictAvailability(resources, events, hospitalId);
+});
+
+export const getSuggestedActionCall = onCall(async (request) => {
+  const { doctorId, doctorName, patients, sagas, events, hospitalId = 'default-hospital' } = request.data;
+  return await getSuggestedAction({ doctorId, doctorName, patients, sagas, events, hospitalId });
 });
 
 // Health check endpoint

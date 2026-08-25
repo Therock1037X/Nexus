@@ -25,6 +25,7 @@ import LiveFeedItem from '../../components/common/LiveFeedItem.jsx';
 import AIExplanationPanel from '../../components/admin/AIExplanationPanel.jsx';
 import AdmitPatientModal from '../../components/common/AdmitPatientModal.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
+import SuggestedActionCard from '../../components/doctor/SuggestedActionCard.jsx';
 
 export default function DoctorDashboard() {
   const { currentUser } = useAuth();
@@ -71,10 +72,16 @@ export default function DoctorDashboard() {
 
   // Quick bed availability summary for Doctor
   const freeBeds = resources.filter(r => r.type === 'bed' && r.status === 'free');
+  const freeGeneral = freeBeds.filter(b => b.bedType === 'general');
   const freeIcu = freeBeds.filter(b => b.bedType === 'icu');
   const freeER = freeBeds.filter(b => b.bedType === 'emergency');
+  const freeVentilators = resources.filter(r => r.type === 'equipment' && (r.equipmentType === 'Ventilator' || r.id?.includes('VENT')) && r.status === 'free');
   const myEvents = events.filter(e => e.actorId === currentUser?.id || e.actorRole === 'doctor');
-  const myPatientsCount = patients.filter(p => p.assignedDoctorId === currentUser?.id).length;
+  const myPatientsCount = patients.filter(p =>
+    p.assignedDoctorId === currentUser?.id ||
+    p.assignedDoctorName?.toLowerCase() === currentUser?.name?.toLowerCase() ||
+    (!p.assignedDoctorId && currentUser?.id === 'doc-1')
+  ).length;
 
   const tabs = [
     { id: 'patients', label: 'Patients', icon: Users, badge: `${myPatientsCount} Assigned` },
@@ -85,7 +92,7 @@ export default function DoctorDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -107,6 +114,9 @@ export default function DoctorDashboard() {
           </button>
         </div>
       </div>
+
+      {/* NEW SMART FEATURE: Suggested Next Action Card (Gemini Assisted) */}
+      <SuggestedActionCard onNavigateTab={handleTabChange} />
 
       {/* Horizontal Feature Tab Bar */}
       <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/70 border border-slate-300/60 rounded-2xl w-full sm:w-fit overflow-x-auto shadow-xs">
@@ -156,10 +166,10 @@ export default function DoctorDashboard() {
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-emerald-700">
-                  {freeBeds.filter(b => b.bedType === 'general').length} <span className="text-sm font-semibold text-slate-500">Units</span>
+                  {freeGeneral.length} <span className="text-sm font-semibold text-slate-500">Units</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Available in general wards
+                  {freeGeneral.length === 0 ? '• All currently occupied' : '• Available in general wards'}
                 </div>
               </div>
             </div>
@@ -176,7 +186,7 @@ export default function DoctorDashboard() {
                   {freeER.length} <span className="text-sm font-semibold text-slate-500">Bays</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Emergency resuscitation wing
+                  {freeER.length === 0 ? '• All bays currently full' : '• Emergency resuscitation wing'}
                 </div>
               </div>
             </div>
@@ -193,7 +203,7 @@ export default function DoctorDashboard() {
                   {freeIcu.length} <span className="text-sm font-semibold text-slate-500">Available</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Critical care monitoring
+                  {freeIcu.length === 0 ? '• All currently in use (Emergency override ready)' : '• Critical care monitoring'}
                 </div>
               </div>
             </div>
@@ -207,10 +217,10 @@ export default function DoctorDashboard() {
               </div>
               <div className="mt-3">
                 <div className="text-2xl font-extrabold text-purple-700">
-                  {resources.filter(r => r.type === 'equipment' && r.id?.includes('VENT') && r.status === 'free').length} <span className="text-sm font-semibold text-slate-500">Free</span>
+                  {freeVentilators.length} <span className="text-sm font-semibold text-slate-500">Free</span>
                 </div>
                 <div className="text-xs text-slate-500 font-medium mt-1">
-                  • Respiratory support equipment
+                  {freeVentilators.length === 0 ? '• All units currently in use' : '• Respiratory support equipment'}
                 </div>
               </div>
             </div>
@@ -224,7 +234,6 @@ export default function DoctorDashboard() {
             onPrescribe={openPrescribeModal}
             onTransfer={openTransferModal}
             onEscalate={openEscalateModal}
-            onAdmit={() => setActiveModal('admit')}
           />
         </div>
       )}
