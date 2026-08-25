@@ -61,15 +61,23 @@ export async function explainAuditTrailWithAI(events = [], resourceId = null, pa
 /**
  * Feature 2: Suggest Escalation Urgency
  */
-export async function suggestEscalationPriorityAI(reasonText) {
-  if (!reasonText || !reasonText.trim()) {
-    return { suggestedUrgency: 'Moderate', confidence: 0.5 };
+export async function suggestEscalationPriorityAI(reasonText, patientDiagnosis = '') {
+  if ((!reasonText || !reasonText.trim()) && !patientDiagnosis) {
+    return { suggestedUrgency: 'Moderate', suggestedPriority: 'normal', confidence: 0.5 };
   }
+
+  const combinedContext = [
+    patientDiagnosis ? `Diagnosis: ${patientDiagnosis}` : '',
+    reasonText ? `Notes: ${reasonText}` : ''
+  ].filter(Boolean).join('\n');
 
   // 1. Try Firebase Cloud Function
   try {
     const suggestCallable = httpsCallable(functions, 'suggestUrgency');
-    const result = await suggestCallable({ reasonText: reasonText.trim() });
+    const result = await suggestCallable({
+      reasonText: reasonText ? reasonText.trim() : '',
+      patientDiagnosis: patientDiagnosis || ''
+    });
     if (result.data?.suggestedUrgency) {
       return {
         suggestedUrgency: result.data.suggestedUrgency,
@@ -83,7 +91,7 @@ export async function suggestEscalationPriorityAI(reasonText) {
 
   // 2. Try Backend API
   try {
-    const res = await apiClient.suggestPriority(reasonText.trim());
+    const res = await apiClient.suggestPriority(combinedContext);
     if (res?.suggestedPriority) {
       const cap = res.suggestedPriority.charAt(0).toUpperCase() + res.suggestedPriority.slice(1);
       return {
@@ -97,21 +105,36 @@ export async function suggestEscalationPriorityAI(reasonText) {
   }
 
   // 3. Deterministic Heuristic Fallback
-  const lower = reasonText.toLowerCase();
+  const lower = combinedContext.toLowerCase();
   let urgency = 'Moderate';
 
-  if (lower.includes('stat') || lower.includes('arrest') || lower.includes('collapse') || lower.includes('stemi') || lower.includes('intubat')) {
+  // Explicitly non-urgent outpatient / growth complaints
+  if (
+    lower.includes('height') ||
+    lower.includes('growth') ||
+    lower.includes('routine') ||
+    lower.includes('checkup') ||
+    lower.includes('follow-up') ||
+    lower.includes('refill') ||
+    lower.includes('mild')
+  ) {
+    if (!lower.includes('arrest') && !lower.includes('vtach') && !lower.includes('shock') && !lower.includes('stat')) {
+      return { suggestedUrgency: 'Low', suggestedPriority: 'normal', confidence: 0.92 };
+    }
+  }
+
+  if (lower.includes('stat') || lower.includes('arrest') || lower.includes('collapse') || lower.includes('stemi') || lower.includes('vtach') || lower.includes('resuscitation') || lower.includes('intubat')) {
     urgency = 'Critical';
-  } else if (lower.includes('urgent') || lower.includes('unstable') || lower.includes('dyspnea') || lower.includes('chest pain') || lower.includes('hypox')) {
+  } else if (lower.includes('urgent') || lower.includes('unstable') || lower.includes('dyspnea') || lower.includes('chest pain') || lower.includes('hypox') || lower.includes('ards') || lower.includes('sepsis')) {
     urgency = 'High';
-  } else if (lower.includes('routine') || lower.includes('stable') || lower.includes('checkup') || lower.includes('discharge')) {
+  } else if (lower.includes('stable') || lower.includes('discharge') || lower.includes('observation')) {
     urgency = 'Low';
   }
 
   return {
     suggestedUrgency: urgency,
     suggestedPriority: urgency.toLowerCase(),
-    confidence: 0.8
+    confidence: 0.88
   };
 }
 

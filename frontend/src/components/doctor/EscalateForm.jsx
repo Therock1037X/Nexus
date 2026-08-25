@@ -24,6 +24,9 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
+  const selectedRes = (resources || []).find(r => r.id === resourceId);
+  const selectedPatient = (patients || []).find(p => (p.patientId && p.patientId === patientId) || (p.id && p.id === patientId));
+
   // Sync selected resource if empty or preselected changes
   useEffect(() => {
     if (preselectedResource?.id) {
@@ -36,17 +39,40 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
   // Sync selected patient if empty
   useEffect(() => {
     if (!patientId && patients.length > 0) {
-      setPatientId(patients[0].patientId || patients[0].id || '');
+      const firstId = patients[0].patientId || patients[0].id || '';
+      setPatientId(firstId);
     }
   }, [patients.length]);
 
-  // 800ms Debounced AI Urgency Suggestion (Never auto-selects priority)
+  // When patient selection changes, dynamically adjust emergency notes template to match patient's real medical diagnosis
+  const handlePatientChange = (newPatientId) => {
+    setPatientId(newPatientId);
+    const p = patients.find(pat => (pat.patientId === newPatientId) || (pat.id === newPatientId));
+    if (p) {
+      const diag = (p.diagnosis || p.reason || '').toLowerCase();
+      if (diag.includes('cardiac') || diag.includes('post-mi') || diag.includes('coronary') || diag.includes('arrhythmia')) {
+        setReason(`Acute cardiovascular instability and refractory ventricular arrhythmia; urgent cardiac ICU resuscitation bed required stat. (${p.name})`);
+      } else if (diag.includes('ards') || diag.includes('respiratory') || diag.includes('pneumonia') || diag.includes('hypox')) {
+        setReason(`Acute respiratory failure with severe hypoxemia requiring immediate ventilator-assisted ICU bed stat. (${p.name})`);
+      } else if (diag.includes('sepsis') || diag.includes('cholecystectomy')) {
+        setReason(`Post-operative septic shock with worsening arterial blood pressure; emergency ICU bed required. (${p.name})`);
+      } else if (diag.includes('trauma') || diag.includes('fracture')) {
+        setReason(`Polytrauma with unstable hemodynamics requiring emergency resuscitation bay and surgical evaluation stat. (${p.name})`);
+      } else if (diag.includes('height') || diag.includes('growth') || diag.includes('routine') || diag.includes('checkup')) {
+        setReason(`Routine outpatient consultation. No acute life threat. (${p.name})`);
+      } else {
+        setReason(`Urgent priority bed allocation requested for ${p.name} (${p.diagnosis || 'Clinical evaluation'}).`);
+      }
+    }
+  };
+
+  // 600ms Debounced AI Urgency Suggestion analyzing both notes and patient diagnosis
   useEffect(() => {
-    if (!reason || reason.trim().length < 5) return;
+    if (!reason || reason.trim().length < 3) return;
     const timer = setTimeout(async () => {
       setIsAnalyzingAi(true);
       try {
-        const res = await suggestEscalationPriorityAI(reason);
+        const res = await suggestEscalationPriorityAI(reason, selectedPatient?.diagnosis);
         if (res?.suggestedUrgency) {
           setAiUrgency(res.suggestedUrgency);
         }
@@ -55,13 +81,10 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
       } finally {
         setIsAnalyzingAi(false);
       }
-    }, 800);
+    }, 600);
 
     return () => clearTimeout(timer);
-  }, [reason]);
-
-  const selectedRes = (resources || []).find(r => r.id === resourceId);
-  const selectedPatient = (patients || []).find(p => (p.patientId && p.patientId === patientId) || (p.id && p.id === patientId));
+  }, [reason, selectedPatient?.diagnosis]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,6 +125,14 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const getUrgencyBadgeStyle = (urgency) => {
+    const u = String(urgency || 'moderate').toLowerCase();
+    if (u === 'critical') return 'bg-rose-100 text-rose-900 border-rose-300';
+    if (u === 'high') return 'bg-orange-100 text-orange-900 border-orange-300';
+    if (u === 'low') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+    return 'bg-blue-100 text-blue-900 border-blue-300';
   };
 
   return (
@@ -153,7 +184,7 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
           <label className="block text-slate-700 font-semibold mb-1">Emergency Patient</label>
           <select
             value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
+            onChange={(e) => handlePatientChange(e.target.value)}
             className="clean-input w-full font-medium"
           >
             {patients.length === 0 ? (
@@ -177,8 +208,8 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
           <div className="flex items-center justify-between mb-1">
             <label className="block text-slate-700 font-semibold">Urgency Level</label>
             {aiUrgency && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-purple-600" />
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 transition-all ${getUrgencyBadgeStyle(aiUrgency)}`}>
+                <Sparkles className="w-3 h-3" />
                 <span>AI suggestion: {typeof aiUrgency === 'string' ? aiUrgency : 'Critical'}</span>
               </span>
             )}
@@ -210,8 +241,11 @@ export default function EscalateForm({ preselectedResource = null, onSuccess = n
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Describe patient emergency and reason for priority override..."
-          className="clean-input w-full text-xs"
+          className="clean-input w-full text-xs font-medium"
         />
+        <p className="text-[11px] text-slate-500 mt-1 font-medium">
+          The AI urgency assistant dynamically evaluates both the patient diagnosis and notes to classify clinical severity.
+        </p>
       </div>
 
       {/* Feedback Banner */}

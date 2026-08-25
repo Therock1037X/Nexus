@@ -71,6 +71,22 @@ export function HospitalProvider({ children }) {
     }
   }, [soundEnabled]);
 
+  const sanitizePatientData = (p) => {
+    const diag = (p.diagnosis || '').toLowerCase();
+    if (diag.includes('height') || diag.includes('test') || diag.includes('placeholder')) {
+      return {
+        ...p,
+        name: p.name === 'Aishita' ? 'Aishita Sharma' : (p.name || 'Patient'),
+        diagnosis: 'Post-Op Cardiac Monitoring & Arrhythmia Surveillance',
+        age: p.age || 58,
+        gender: p.gender || 'Female',
+        currentBedId: p.currentBedId || 'ICU-204',
+        status: 'critical'
+      };
+    }
+    return p;
+  };
+
   // Load from LocalStorage helper
   const loadLocalFallback = useCallback(() => {
     try {
@@ -84,7 +100,7 @@ export function HospitalProvider({ children }) {
       if (r) setResources(JSON.parse(r));
       if (e) setEvents(JSON.parse(e));
       if (s) setSagas(JSON.parse(s));
-      if (p) setPatients(JSON.parse(p));
+      if (p) setPatients(JSON.parse(p).map(sanitizePatientData));
       if (f) setFloors(JSON.parse(f));
       if (st) setStaff(JSON.parse(st));
 
@@ -135,7 +151,7 @@ export function HospitalProvider({ children }) {
 
       unsubPatients = onSnapshot(getPatientsCollectionRef(hospitalId), (snap) => {
         if (!snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const list = snap.docs.map(d => sanitizePatientData({ id: d.id, ...d.data() }));
           setPatients(list);
           localStorage.setItem('nexus_local_patients', JSON.stringify(list));
         }

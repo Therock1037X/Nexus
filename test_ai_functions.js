@@ -16,12 +16,16 @@ async function runTests() {
   const t1 = await explainActivityLogic({ events: sampleEvents });
   console.log('Output 1:', t1);
 
-  // Test 2: Suggest Urgency
-  console.log('\n--- TEST 2: Suggest Urgency ---');
-  const t2a = await suggestUrgencyLogic({ reasonText: 'Patient in acute STEMI with refractory ventricular tachycardia stat' });
-  const t2b = await suggestUrgencyLogic({ reasonText: 'Patient is stable, routine post-op recovery check' });
-  console.log('Output 2a (Critical note):', t2a);
-  console.log('Output 2b (Routine note):', t2b);
+  // Test 2: Suggest Urgency & Accuracy Validation
+  console.log('\n--- TEST 2: Suggest Urgency (Accuracy Benchmark) ---');
+  const t2a = await suggestUrgencyLogic({ reasonText: 'Patient in acute STEMI with refractory ventricular tachycardia stat', patientDiagnosis: 'Acute Coronary Syndrome' });
+  const t2b = await suggestUrgencyLogic({ reasonText: 'Patient is stable, routine post-op recovery check', patientDiagnosis: 'Post-Op Observation' });
+  const t2c = await suggestUrgencyLogic({ reasonText: 'Follow up for pediatric height not increasing, routine growth check', patientDiagnosis: 'Pediatric Growth Monitoring' });
+  const t2d = await suggestUrgencyLogic({ reasonText: 'Patient in septic shock, BP 70/40, requiring norepinephrine and ICU bed stat', patientDiagnosis: 'Septic Shock' });
+  console.log('Output 2a (Critical Cardiac Arrest):', t2a);
+  console.log('Output 2b (Routine Post-Op):', t2b);
+  console.log('Output 2c (Non-urgent Growth/Height complaint):', t2c);
+  console.log('Output 2d (Critical Septic Shock):', t2d);
 
   // Test 3: Parse Natural Language Request
   console.log('\n--- TEST 3: Parse Natural Language Request ---');
