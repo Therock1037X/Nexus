@@ -163,6 +163,8 @@ function generateBeds() {
       patientData = { patientId: 'pat-3', patientName: 'Rajesh Verma', assignedDoctorId: 'doc-1', admittedAt: new Date(Date.now() - 6 * 3600000).toISOString() };
     } else if (i === 203) {
       patientData = { patientId: 'pat-6', patientName: 'Fatima Khan', assignedDoctorId: 'doc-6', admittedAt: new Date(Date.now() - 36 * 3600000).toISOString() };
+    } else if (i === 204) {
+      patientData = { patientId: 'pat-7', patientName: 'Aishita Sharma', assignedDoctorId: 'doc-1', admittedAt: new Date(Date.now() - 4 * 3600000).toISOString() };
     } else if (isOccupied) {
       patientData = { patientId: `pat-icu-${i}`, patientName: `Critical Patient ICU-${i}`, assignedDoctorId: 'doc-7', admittedAt: new Date(Date.now() - 14 * 3600000).toISOString() };
     }
@@ -262,6 +264,32 @@ const PATIENTS = [
     admittedAt: new Date(Date.now() - 36 * 3600000).toISOString(),
     vitals: { hr: 104, bp: '100/68', spo2: 94, temp: '100.2 F' },
     status: 'critical'
+  },
+  {
+    patientId: 'pat-7',
+    name: 'Aishita Sharma',
+    age: 58,
+    gender: 'Female',
+    diagnosis: 'Post-Op Cardiac Monitoring & Arrhythmia Surveillance',
+    currentBedId: 'ICU-204',
+    assignedDoctorId: 'doc-1',
+    assignedDoctorName: 'Dr. Ananya Sharma',
+    admittedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+    vitals: { hr: 92, bp: '135/88', spo2: 97, temp: '98.6 F' },
+    status: 'critical'
+  },
+  {
+    patientId: 'pat-8',
+    name: 'Vikramaditya Roy',
+    age: 51,
+    gender: 'Male',
+    diagnosis: 'Acute Decompensated Heart Failure (NYHA Class III)',
+    currentBedId: 'E-02',
+    assignedDoctorId: 'doc-4',
+    assignedDoctorName: 'Dr. Vikram Rao',
+    admittedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+    vitals: { hr: 96, bp: '148/94', spo2: 93, temp: '98.9 F' },
+    status: 'emergency'
   }
 ];
 

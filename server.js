@@ -116,7 +116,7 @@ class HospitalStateStore {
 
     // 8 ICU Beds on Floor 2
     for (let i = 201; i <= 208; i++) {
-      const isOcc = i === 201 || i === 202 || i === 203;
+      const isOcc = i === 201 || i === 202 || i === 203 || i === 204;
       beds.push({
         id: `ICU-${i}`,
         name: `ICU Bed ICU-${i}`,
@@ -124,14 +124,14 @@ class HospitalStateStore {
         bedType: 'icu',
         floorId: 'floor-2',
         roomNo: `ICU-POD-${i % 2 + 1}`,
-        status: isOcc ? 'occupied' : (i === 204 ? 'reserved' : 'free'),
+        status: isOcc ? 'occupied' : (i === 205 ? 'reserved' : 'free'),
         version: 1,
         currentAllocation: isOcc ? {
-          patientId: i === 201 ? 'pat-2' : (i === 202 ? 'pat-3' : 'pat-6'),
-          patientName: i === 201 ? 'Sunita Devi' : (i === 202 ? 'Rajesh Verma' : 'Fatima Khan'),
+          patientId: i === 201 ? 'pat-2' : (i === 202 ? 'pat-3' : (i === 203 ? 'pat-6' : 'pat-7')),
+          patientName: i === 201 ? 'Sunita Devi' : (i === 202 ? 'Rajesh Verma' : (i === 203 ? 'Fatima Khan' : 'Aishita Sharma')),
           priority: 'critical',
-          reason: i === 201 ? 'Acute ARDS on ventilator' : (i === 202 ? 'Acute Post-MI' : 'Post-op Sepsis monitoring'),
-          allocatedAt: new Date(Date.now() - 8 * 3600000).toISOString()
+          reason: i === 201 ? 'Acute ARDS on ventilator' : (i === 202 ? 'Acute Post-MI' : (i === 203 ? 'Post-op Sepsis monitoring' : 'Post-op Cardiac Monitoring')),
+          allocatedAt: new Date(Date.now() - 4 * 3600000).toISOString()
         } : null
       });
     }
@@ -269,6 +269,40 @@ class HospitalStateStore {
         vitals: { hr: 104, bp: '100/68', spo2: 94, temp: '100.2 F' },
         documents: [
           { id: 'doc-601', name: 'Blood_Culture_Sensitivity.pdf', type: 'application/pdf', size: '1.2 MB', uploadedAt: new Date(Date.now() - 12 * 3600000).toISOString(), uploadedBy: 'Microbiology', notes: 'Gram-negative bacillus isolated; sensitive to Meropenem.' }
+        ]
+      },
+      {
+        patientId: 'pat-7',
+        name: 'Aishita Sharma',
+        age: 58,
+        gender: 'Female',
+        phone: '+91 98205 11983',
+        diagnosis: 'Post-Op Cardiac Monitoring & Arrhythmia Surveillance',
+        currentBedId: 'ICU-204',
+        assignedDoctorId: 'doc-1',
+        assignedDoctorName: 'Dr. Ananya Sharma',
+        status: 'critical',
+        admittedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+        vitals: { hr: 92, bp: '135/88', spo2: 97, temp: '98.6 F' },
+        documents: [
+          { id: 'doc-701', name: 'PostOp_Telemetry_Report.pdf', type: 'application/pdf', size: '1.8 MB', uploadedAt: new Date(Date.now() - 3 * 3600000).toISOString(), uploadedBy: 'Cardiology Team', notes: 'Sinus rhythm with occasional premature ventricular contractions.' }
+        ]
+      },
+      {
+        patientId: 'pat-8',
+        name: 'Vikramaditya Roy',
+        age: 51,
+        gender: 'Male',
+        phone: '+91 98110 44920',
+        diagnosis: 'Acute Decompensated Heart Failure (NYHA Class III)',
+        currentBedId: 'E-02',
+        assignedDoctorId: 'doc-4',
+        assignedDoctorName: 'Dr. Vikram Rao',
+        status: 'emergency',
+        admittedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+        vitals: { hr: 96, bp: '148/94', spo2: 93, temp: '98.9 F' },
+        documents: [
+          { id: 'doc-801', name: '2D_Echocardiogram.pdf', type: 'application/pdf', size: '3.1 MB', uploadedAt: new Date(Date.now() - 90 * 60000).toISOString(), uploadedBy: 'Echo Lab', notes: 'Left ventricular ejection fraction: 32%.' }
         ]
       }
     ];

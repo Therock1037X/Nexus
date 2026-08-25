@@ -180,6 +180,40 @@ export const SEED_DATA = {
       documents: [
         { id: 'doc-601', name: 'Blood_Culture_Sensitivity.pdf', type: 'application/pdf', size: '1.2 MB', uploadedAt: new Date(Date.now() - 12 * 3600000).toISOString(), uploadedBy: 'Microbiology', notes: 'Gram-negative bacillus isolated; sensitive to Meropenem.' }
       ]
+    },
+    {
+      patientId: 'pat-7',
+      name: 'Aishita Sharma',
+      age: 58,
+      gender: 'Female',
+      phone: '+91 98205 11983',
+      diagnosis: 'Post-Op Cardiac Monitoring & Arrhythmia Surveillance',
+      currentBedId: 'ICU-204',
+      assignedDoctorId: 'doc-1',
+      assignedDoctorName: 'Dr. Ananya Sharma',
+      status: 'critical',
+      admittedAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+      vitals: { hr: 92, bp: '135/88', spo2: 97, temp: '98.6 F' },
+      documents: [
+        { id: 'doc-701', name: 'PostOp_Telemetry_Report.pdf', type: 'application/pdf', size: '1.8 MB', uploadedAt: new Date(Date.now() - 3 * 3600000).toISOString(), uploadedBy: 'Cardiology Team', notes: 'Sinus rhythm with occasional premature ventricular contractions.' }
+      ]
+    },
+    {
+      patientId: 'pat-8',
+      name: 'Vikramaditya Roy',
+      age: 51,
+      gender: 'Male',
+      phone: '+91 98110 44920',
+      diagnosis: 'Acute Decompensated Heart Failure (NYHA Class III)',
+      currentBedId: 'E-02',
+      assignedDoctorId: 'doc-4',
+      assignedDoctorName: 'Dr. Vikram Rao',
+      status: 'emergency',
+      admittedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+      vitals: { hr: 96, bp: '148/94', spo2: 93, temp: '98.9 F' },
+      documents: [
+        { id: 'doc-801', name: '2D_Echocardiogram.pdf', type: 'application/pdf', size: '3.1 MB', uploadedAt: new Date(Date.now() - 90 * 60000).toISOString(), uploadedBy: 'Echo Lab', notes: 'Left ventricular ejection fraction: 32%.' }
+      ]
     }
   ]
 };
@@ -192,7 +226,7 @@ export function generateDemoBeds() {
   for (let i = 1; i <= 10; i++) {
     const num = i < 10 ? `0${i}` : `${i}`;
     const id = `E-${num}`;
-    const isOcc = i === 1 || i === 4;
+    const isOcc = i === 1 || i === 2;
     beds.push({
       id,
       name: `Emergency Bed ${id}`,
@@ -203,8 +237,8 @@ export function generateDemoBeds() {
       status: isOcc ? 'occupied' : (i === 8 ? 'reserved' : 'free'),
       version: 1,
       currentAllocation: isOcc ? {
-        patientId: i === 1 ? 'pat-4' : 'pat-temp-er',
-        patientName: i === 1 ? 'Meenakshi Sundaram' : 'Walk-in Trauma Patient',
+        patientId: i === 1 ? 'pat-4' : 'pat-8',
+        patientName: i === 1 ? 'Meenakshi Sundaram' : 'Vikramaditya Roy',
         assignedDoctorId: 'doc-4',
         assignedDoctorName: 'Dr. Vikram Rao',
         priority: 'urgent',
@@ -218,21 +252,23 @@ export function generateDemoBeds() {
   for (let i = 101; i <= 120; i++) {
     const id = `G-${i}`;
     const isOcc = occupiedGen.includes(i);
-    let alloc = null;
-    if (i === 101) alloc = { patientId: 'pat-1', patientName: 'Ramesh Gupta', assignedDoctorId: 'doc-3', assignedDoctorName: 'Dr. Priya Nair', priority: 'normal', allocatedAt: new Date(Date.now() - 24 * 3600000).toISOString() };
-    else if (i === 105) alloc = { patientId: 'pat-5', patientName: 'Arvind Patel', assignedDoctorId: 'doc-2', assignedDoctorName: 'Dr. Rohan Deshmukh', priority: 'normal', allocatedAt: new Date(Date.now() - 12 * 3600000).toISOString() };
-    else if (isOcc) alloc = { patientId: `pat-${i}`, patientName: `Patient Gen-${i}`, assignedDoctorId: 'doc-3', assignedDoctorName: 'Dr. Priya Nair', priority: 'normal', allocatedAt: new Date(Date.now() - 8 * 3600000).toISOString() };
-
     beds.push({
       id,
       name: `General Bed ${id}`,
       type: 'bed',
       bedType: 'general',
       floorId: 'floor-1',
-      roomNo: `Room ${Math.floor((i - 100) / 4) + 101}`,
-      status: isOcc ? 'occupied' : (i === 102 ? 'cleaning' : 'free'),
+      roomNo: `Ward 10${Math.ceil((i - 100) / 4)}`,
+      status: isOcc ? 'occupied' : (i === 114 ? 'cleaning' : 'free'),
       version: 1,
-      currentAllocation: alloc
+      currentAllocation: isOcc ? {
+        patientId: i === 101 ? 'pat-1' : (i === 105 ? 'pat-5' : `pat-gen-${i}`),
+        patientName: i === 101 ? 'Ramesh Gupta' : (i === 105 ? 'Arvind Patel' : `Ward Patient ${i}`),
+        assignedDoctorId: i === 101 ? 'doc-1' : (i === 105 ? 'doc-2' : 'doc-3'),
+        assignedDoctorName: i === 101 ? 'Dr. Ananya Sharma' : (i === 105 ? 'Dr. Rohan Deshmukh' : 'Dr. Priya Nair'),
+        priority: 'normal',
+        allocatedAt: new Date(Date.now() - 8 * 3600000).toISOString()
+      } : null
     });
   }
 
@@ -245,6 +281,7 @@ export function generateDemoBeds() {
     if (i === 201) alloc = { patientId: 'pat-2', patientName: 'Sunita Devi', assignedDoctorId: 'doc-7', assignedDoctorName: 'Dr. Sneha Kulkarni', priority: 'critical', allocatedAt: new Date(Date.now() - 18 * 3600000).toISOString() };
     else if (i === 202) alloc = { patientId: 'pat-3', patientName: 'Rajesh Verma', assignedDoctorId: 'doc-1', assignedDoctorName: 'Dr. Ananya Sharma', priority: 'critical', allocatedAt: new Date(Date.now() - 6 * 3600000).toISOString() };
     else if (i === 203) alloc = { patientId: 'pat-6', patientName: 'Fatima Khan', assignedDoctorId: 'doc-6', assignedDoctorName: 'Dr. Arjun Mehta', priority: 'critical', allocatedAt: new Date(Date.now() - 36 * 3600000).toISOString() };
+    else if (i === 204) alloc = { patientId: 'pat-7', patientName: 'Aishita Sharma', assignedDoctorId: 'doc-1', assignedDoctorName: 'Dr. Ananya Sharma', priority: 'critical', allocatedAt: new Date(Date.now() - 4 * 3600000).toISOString() };
     else if (isOcc) alloc = { patientId: `pat-icu-${i}`, patientName: `Critical Patient ICU-${i}`, assignedDoctorId: 'doc-7', assignedDoctorName: 'Dr. Sneha Kulkarni', priority: 'high', allocatedAt: new Date(Date.now() - 14 * 3600000).toISOString() };
 
     beds.push({
