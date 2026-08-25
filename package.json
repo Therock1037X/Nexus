@@ -1,0 +1,26 @@
+{
+  "name": "nexus-clinical-resource-system",
+  "version": "1.0.0",
+  "description": "Real-Time Clinical Resource Transaction System with Optimistic Concurrency Control, Sagas, and AI Intelligence",
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "seed": "node seedDemoData.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "keywords": [
+    "healthcare",
+    "firestore",
+    "transactions",
+    "concurrency",
+    "saga",
+    "react",
+    "vite"
+  ],
+  "author": "Google Deepmind Antigravity Team",
+  "license": "MIT"
+}

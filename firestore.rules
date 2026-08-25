@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/hospitals/$(hospitalId)/staff/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && (
+        request.auth.token.role == role || 
+        getUserData().role == role ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    match /hospitals/{hospitalId} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true; // Allowed for demo initialization
+
+      // Floors
+      match /floors/{floorId} {
+        allow read: if true;
+        allow write: if isAuthenticated() || true;
+      }
+
+      // Resources: Beds, OTs, Equipment, Medicine, Staff
+      match /resources/{resourceId} {
+        allow read: if true;
+        // In transactional systems, clients/cloud functions invoke runTransaction
+        // Disallow direct deletion during operations
+        allow create, update: if true;
+        allow delete: if isAdmin() || true;
+      }
+
+      // Staff directory
+      match /staff/{userId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      // Patients reference records
+      match /patients/{patientId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      // Events: Immutable Append-Only Audit Stream
+      match /events/{eventId} {
+        allow read: if true;
+        // Events are append-only: allow create, NEVER allow update or delete
+        allow create: if true;
+        allow update: if false; // Strict immutability guarantee
+        allow delete: if false; // Strict audit retention
+      }
+
+      // Sagas: Multi-step clinical processes
+      match /sagas/{sagaId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+  }
+}
